@@ -22,13 +22,14 @@ int main(int argc, char const *argv[])
 {
 	// The camera is used to cast appropriate initial rays
 	Camera c(
-		glm::vec3(1),
-		glm::vec3(1),
-		glm::vec3(1),
-		40,
-		640,
-		480);
-	// Objects are contained in the Scene object
+		glm::vec3(0, 0, -1), // Eye (position to look at)
+		glm::vec3(0, 0, 0), // Center (position of camera)
+		glm::vec3(0, 1, 0), // Up vector
+		40, // Field of view in angles
+		640, // pixel width
+		480); // pixel height
+
+	// 3D objects are contained in the Scene object
 	Scene s;
 
 	// intensities will hold image data
@@ -37,20 +38,31 @@ int main(int argc, char const *argv[])
 	unsigned char pixel_values[c.width() * c.height() * 3]; // w * h * rgb
 
 	// Loop through all pixels to calculate their intensities by ray-tracing
+	// This loop could and should be parallellized.
 	for (int x = 0; x < c.width(); ++x)
 	{
 		for (int y = 0; y < c.height(); ++y)
 		{
 			// Subsampling loop goes here later
-			// Later do ray casting in the scene to determine intensities
+			// Trying to cast a ray
+			Ray r = c.castRay(
+				x, // Pixel x 
+				y, // Pixel y 
+				0, // Parameter x (> -0.5 and <= 0.5), for subsampling
+				0); // Parameter y (> -0.5 and <= 0.5), for subsampling
+			SpectralDistribution sd = s.traceRay(r);
+
 			int index = (x + y * c.width()) * 3;
-			intensities[index + 0] = 0.1; // Red
-			intensities[index + 1] = 0.5; // Green
-			intensities[index + 2] = 0.8; // Blue
+			intensities[index + 0] = sd.data[0]; // Red
+			intensities[index + 1] = sd.data[1]; // Green
+			intensities[index + 2] = sd.data[2]; // Blue
 		}
 	}
 
 	// Convert to byte data
+	// This conversion should be more sophisticated later on,
+	// Gamma correction and / or transformation to logarithmic scale etc.
+	// It should also be dependent on the maximum intensity value.
 	for (int x = 0; x < c.width(); ++x)
 	{
 		for (int y = 0; y < c.height(); ++y)

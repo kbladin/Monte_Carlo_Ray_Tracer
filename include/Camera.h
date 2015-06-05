@@ -2,6 +2,9 @@
 #define CAMERA_H
 
 #include <glm/glm.hpp>
+#include <glm/ext.hpp>
+
+#include "utils.h"
 
 class Camera
 {
@@ -20,12 +23,12 @@ public:
 		float fov,
 		int width,
 		int height);
-	~Camera();
+	~Camera(){};
 
 	const int width() {return WIDTH_;}
 	const int height() {return HEIGHT_;}
 
-	void doSomething();
+	Ray castRay(int pixel_x, int pixel_y, float parameter_x, float parameter_y);
 };
 
 #endif // CAMERA_H
