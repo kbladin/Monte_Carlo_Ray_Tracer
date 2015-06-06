@@ -18,4 +18,9 @@ struct SpectralDistribution
 	float data[N_WAVELENGTHS];
 };
 
+struct Material
+{
+	glm::vec3 color;
+};
+
 #endif // UTILS_H

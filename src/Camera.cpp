@@ -32,8 +32,8 @@ Ray Camera::castRay(
 	Ray r;
 	if (pixel_x < 0 || pixel_x > WIDTH_ - 1 ||
 		pixel_y < 0 || pixel_y > HEIGHT_ - 1 ||
-		parameter_x <= -0.5 || parameter_x > 0.5 ||
-		parameter_y <= -0.5 || parameter_y > 0.5
+		parameter_x < -0.5 || parameter_x >= 0.5 ||
+		parameter_y < -0.5 || parameter_y >= 0.5
 		)
 	{
 		std::cout << "ERROR : Invalid arguments in castRay()" << std::endl;
@@ -57,7 +57,7 @@ Ray Camera::castRay(
 			P,
 			glm::vec4(0, 0, WIDTH_, HEIGHT_));
 		glm::vec3 to = glm::unProject(
-			glm::vec3(pixel_x + parameter_x, pixel_y + parameter_y, 1.0f),
+			glm::vec3(pixel_x + parameter_x, pixel_y + parameter_y, -1.0f),
 			V,
 			P,
 			glm::vec4(0, 0, WIDTH_, HEIGHT_));
