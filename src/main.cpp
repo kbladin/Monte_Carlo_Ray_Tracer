@@ -25,7 +25,7 @@ int main(int argc, char const *argv[])
 		glm::vec3(0, 0, -1), // Eye (position to look at)
 		glm::vec3(0, 0, 0), // Center (position of camera)
 		glm::vec3(0, 1, 0), // Up vector
-		40, // Field of view in angles
+		3.1415 / 4, // Field of view in radians
 		640, // pixel width
 		480); // pixel height
 

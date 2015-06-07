@@ -9,7 +9,7 @@ project(${PROJECT_NAME})
 
 # Add external libraries
 # GLM (only include, no source needed)
-set(GLM_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/external_libraries/glm)
+set(GLM_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/external_libraries/)
 include_directories(${GLM_INCLUDE_DIRS})
 
 # Our own include directory
