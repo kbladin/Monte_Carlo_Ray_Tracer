@@ -103,7 +103,7 @@ Scene::~Scene()
 
 Object3D* Scene::intersect(Ray r)
 {
-	float smallest_t = 100000;
+	float smallest_t = 100000; // Ugly solution
 	Object3D* to_return = NULL;
 	for (int i = 0; i < objects_.size(); ++i)
 	{

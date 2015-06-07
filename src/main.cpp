@@ -48,8 +48,8 @@ int main(int argc, char const *argv[])
 			Ray r = c.castRay(
 				x, // Pixel x 
 				y, // Pixel y 
-				0, // Parameter x (> -0.5 and <= 0.5), for subsampling
-				0); // Parameter y (> -0.5 and <= 0.5), for subsampling
+				0, // Parameter x (>= -0.5 and < 0.5), for subsampling
+				0); // Parameter y (>= -0.5 and < 0.5), for subsampling
 			SpectralDistribution sd = s.traceRay(r);
 
 			int index = (x + y * c.width()) * 3;

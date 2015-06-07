@@ -5,7 +5,12 @@ SET(PROJECT_NAME global_illumination)
 project(${PROJECT_NAME})
 
 # Add the external module path
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake/Modules)
+# set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake/Modules)
+
+# Add external libraries
+# GLM (only include, no source needed)
+set(GLM_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/external_libraries/glm)
+include_directories(${GLM_INCLUDE_DIRS})
 
 # Our own include directory
 set(COMMON_INCLUDES ${PROJECT_SOURCE_DIR}/include)
