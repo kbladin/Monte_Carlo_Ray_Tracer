@@ -4,19 +4,17 @@
 
 // --- Object3D class functions --- //
 
-Object3D::Object3D(Material material) : 
+Object3D::Object3D(Material* material) : 
 	material_(material)
-{
-
-}
+{}
 
 // --- Sphere class functions --- //
 
-Sphere::Sphere(glm::vec3 position, float radius, Material material) : 
+Sphere::Sphere(glm::vec3 position, float radius, Material* material) : 
 	Object3D(material), POSITION_(position), RADIUS_(radius)
 {}
 
-bool Sphere::intersect(float* t, Ray r)
+bool Sphere::intersect(IntersectionData* id, Ray r)
 {
 	// if to_square is negative we have imaginary solutions,
 	// hence no intersection
@@ -26,21 +24,29 @@ bool Sphere::intersect(float* t, Ray r)
 		pow(p_half, 2) + 
 		pow(RADIUS_, 2) - 
 		pow(glm::length(r.position - POSITION_), 2);
-	float t_local; // parameter that tells us where on the ray the intersection is
+	float t; // parameter that tells us where on the ray the intersection is
+	glm::vec3 n; // normal of the intersection point on the surface
 	if (to_square < 0)
 	// No intersection points
 		return false;
 	else // if (to_square > 0) or (to_square == 0)
 	// One or two intersection points, if two intersection points,
-	// we choose the closest one
+	// we choose the closest one that gives a positive t
 	{
-		t_local = -p_half - sqrt(to_square);
-		// This is the ignored intersection point (back of the sphere):
-		//float t_local2 = -p_half + sqrt(to_square);
+		t = -p_half - sqrt(to_square); // First the one on the front face
+		n = r.position + t*r.direction - POSITION_;
+		if (t < 0) // if we are inside the sphere
+		{
+			// the intersection is on the inside of the sphere
+			t = -p_half + sqrt(to_square);
+			n = POSITION_ - (r.position + t*r.direction);
+		}
 	}
-	if (t_local >= 0) // t needs to be positive to travel forward on the ray
+	if (t >= 0) // t needs to be positive to travel forward on the ray
 	{
-		*t = t_local;
+		id->t = t;
+		id->normal = n;
+		id->material = material();
 		return true;
 	}
 	return false;
@@ -48,11 +54,11 @@ bool Sphere::intersect(float* t, Ray r)
 
 // --- Plane class functions --- //
 
-Plane::Plane(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, Material material) : 
+Plane::Plane(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, Material* material) : 
 	Object3D(material), P0_(p0), P1_(p1), P2_(p2)
 {}
 
-bool Plane::intersect(float* t, Ray r)
+bool Plane::intersect(IntersectionData* id, Ray r)
 {
 	glm::mat3 M;
 	M[0] = -r.direction;
@@ -63,14 +69,20 @@ bool Plane::intersect(float* t, Ray r)
 
 	// To avoid confusion
 	// t is the parameter on the ray, u and v are parameters on the plane
-	float t_local = tuv.x;
+	float t = tuv.x;
 	float u = tuv.y;
 	float v = tuv.z;
 
 	if (u >= 0 && u <= 1 && v >= 0 && v <= 1 && // Within the boundary
-		t_local >= 0) // t needs to be positive to travel forward on the ray
+		t >= 0) // t needs to be positive to travel forward on the ray
 	{
-		*t = t_local;
+		glm::vec3 n = glm::cross(u * (P1_ - P0_), v * (P2_ - P0_));
+		if (glm::dot(r.direction, n) > 0)
+			n = -n; // intersection on the back side of the plane
+		
+		id->t = t;
+		id->normal = n;
+		id->material = material();
 		return true;
 	}
 	else
@@ -81,16 +93,23 @@ bool Plane::intersect(float* t, Ray r)
 
 Scene::Scene ()
 {
-	Material sphere_material;
-	Material plane_material;
-	sphere_material.color = glm::vec3(0,0.5,0);
-	plane_material.color = glm::vec3(0.5,0,0);
-	objects_.push_back(new Sphere(glm::vec3(0.7,0.7,-5), 0.5, sphere_material));
+	sphere_material_ = new Material();
+	plane_material_ = new Material();
+
+	sphere_material_->color_diffuse.data[0] = 0;
+	sphere_material_->color_diffuse.data[1] = 0.5;
+	sphere_material_->color_diffuse.data[2] = 0;
+
+	plane_material_->color_diffuse.data[0] = 0.5;
+	plane_material_->color_diffuse.data[1] = 0;
+	plane_material_->color_diffuse.data[2] = 0;
+
+	objects_.push_back(new Sphere(glm::vec3(0.7,0.7,-5), 0.5, sphere_material_));
 	objects_.push_back(new Plane(
 		glm::vec3(-0.7,-0.7,-4.7), // P0
 		glm::vec3(0.7,-0.7,-4.7), // P1
 		glm::vec3(-0.7,0.7,-4.7), // P2
-		plane_material));
+		plane_material_));
 }
 
 Scene::~Scene()
@@ -99,33 +118,42 @@ Scene::~Scene()
 	{
 		delete objects_[i];
 	}
+	delete sphere_material_;
+	delete plane_material_;
 }
 
-Object3D* Scene::intersect(Ray r)
+bool Scene::intersect(IntersectionData* id, Ray r)
 {
-	float smallest_t = 100000; // Ugly solution
-	Object3D* to_return = NULL;
+	IntersectionData id_smallest_t;
+	id_smallest_t.t = 100000; // Ugly solution
+
+	Object3D* intersecting_object = NULL;
 	for (int i = 0; i < objects_.size(); ++i)
 	{
-		float t;
-		if (objects_[i]->intersect(&t,r) && t < smallest_t)
+		IntersectionData id_local;
+		if (objects_[i]->intersect(&id_local,r) && id_local.t < id_smallest_t.t)
 		{
-			smallest_t = t;
-			to_return = objects_[i];
+			id_smallest_t = id_local;
+			intersecting_object = objects_[i];
 		}
 	}
-	return to_return;
+	if (intersecting_object)
+	{
+		*id = id_smallest_t;
+		return true;
+	}
+	return false;
 }
 
 SpectralDistribution Scene::traceRay(Ray r)
 {
 	SpectralDistribution sd;
-	Object3D* intersected_object = intersect(r);
-	if (intersected_object)
+	IntersectionData id;
+	if (intersect(&id, r))
 	{
-		sd.data[0] = intersected_object->material_.color.r;
-		sd.data[1] = intersected_object->material_.color.g;
-		sd.data[2] = intersected_object->material_.color.b;
+		sd.data[0] = id.material.color_diffuse.data[0];
+		sd.data[1] = id.material.color_diffuse.data[1];
+		sd.data[2] = id.material.color_diffuse.data[2];
 	}
 	else
 	{
