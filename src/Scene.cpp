@@ -93,23 +93,67 @@ bool Plane::intersect(IntersectionData* id, Ray r)
 
 Scene::Scene ()
 {
-	sphere_material_ = new Material();
-	plane_material_ = new Material();
+	diffuse_red_ = new Material();
+	diffuse_green_ = new Material();
+	diffuse_blue_ = new Material();
+	diffuse_white_ = new Material();
+	diffuse_gray_ = new Material();
 
-	sphere_material_->color_diffuse.data[0] = 0;
-	sphere_material_->color_diffuse.data[1] = 0.5;
-	sphere_material_->color_diffuse.data[2] = 0;
+	diffuse_red_->color_diffuse.data[0] = 0.5;
+	diffuse_red_->color_diffuse.data[1] = 0;
+	diffuse_red_->color_diffuse.data[2] = 0;
 
-	plane_material_->color_diffuse.data[0] = 0.5;
-	plane_material_->color_diffuse.data[1] = 0;
-	plane_material_->color_diffuse.data[2] = 0;
+	diffuse_green_->color_diffuse.data[0] = 0;
+	diffuse_green_->color_diffuse.data[1] = 0.5;
+	diffuse_green_->color_diffuse.data[2] = 0;
 
-	objects_.push_back(new Sphere(glm::vec3(0.7,0.7,-5), 0.5, sphere_material_));
+	diffuse_blue_->color_diffuse.data[0] = 0;
+	diffuse_blue_->color_diffuse.data[1] = 0;
+	diffuse_blue_->color_diffuse.data[2] = 0.5;
+
+	diffuse_white_->color_diffuse.data[0] = 1;
+	diffuse_white_->color_diffuse.data[1] = 1;
+	diffuse_white_->color_diffuse.data[2] = 1;
+
+	diffuse_gray_->color_diffuse.data[0] = 0.5;
+	diffuse_gray_->color_diffuse.data[1] = 0.5;
+	diffuse_gray_->color_diffuse.data[2] = 0.5;
+
+
+	// Back
 	objects_.push_back(new Plane(
-		glm::vec3(-0.7,-0.7,-4.7), // P0
-		glm::vec3(0.7,-0.7,-4.7), // P1
-		glm::vec3(-0.7,0.7,-4.7), // P2
-		plane_material_));
+		glm::vec3(-1,-1,-5), // P0
+		glm::vec3(1,-1,-5), // P1
+		glm::vec3(-1,1,-5), // P2
+		diffuse_gray_));
+	// Left
+	objects_.push_back(new Plane(
+		glm::vec3(-1,-1,-5), // P0
+		glm::vec3(-1,-1,-0), // P1
+		glm::vec3(-1,1,-5), // P2
+		diffuse_red_));
+	// Right
+	objects_.push_back(new Plane(
+		glm::vec3(1,-1,-5), // P0
+		glm::vec3(1,-1,-0), // P1
+		glm::vec3(1,1,-5), // P2
+		diffuse_blue_));
+	// Roof
+	objects_.push_back(new Plane(
+		glm::vec3(-1,1,-5), // P0
+		glm::vec3(1,1,-5), // P1
+		glm::vec3(-1,1,-0), // P2
+		diffuse_white_));
+	// Floor
+	objects_.push_back(new Plane(
+		glm::vec3(-1,-1,-5), // P0
+		glm::vec3(1,-1,-5), // P1
+		glm::vec3(-1,-1,-0), // P2
+		diffuse_white_));
+
+
+	objects_.push_back(new Sphere(glm::vec3(0.7,0.7,-5), 0.5, diffuse_green_));
+
 }
 
 Scene::~Scene()
@@ -118,8 +162,11 @@ Scene::~Scene()
 	{
 		delete objects_[i];
 	}
-	delete sphere_material_;
-	delete plane_material_;
+	delete diffuse_red_;
+	delete diffuse_green_;
+	delete diffuse_blue_;
+	delete diffuse_white_;
+	delete diffuse_gray_;
 }
 
 bool Scene::intersect(IntersectionData* id, Ray r)

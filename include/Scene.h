@@ -47,8 +47,12 @@ class Scene
 private:
 	std::vector<Object3D*> objects_;
 
-	Material* sphere_material_;
-	Material* plane_material_;
+	Material* diffuse_red_;
+	Material* diffuse_green_;
+	Material* diffuse_blue_;
+	Material* diffuse_white_;
+	Material* diffuse_gray_;
+	
 public:
 	Scene();
 	~Scene();

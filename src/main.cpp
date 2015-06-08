@@ -26,8 +26,8 @@ int main(int argc, char const *argv[])
 		glm::vec3(0, 0, 0), // Center (position of camera)
 		glm::vec3(0, 1, 0), // Up vector
 		M_PI / 4, // Field of view in radians
-		640, // pixel width
-		480); // pixel height
+		800, // pixel width
+		600); // pixel height
 
 	// 3D objects are contained in the Scene object
 	Scene s;
