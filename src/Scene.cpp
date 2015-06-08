@@ -1,6 +1,7 @@
 #include "../include/Scene.h"
 
 #include <iostream>
+#include <random>
 
 // --- Object3D class functions --- //
 
@@ -45,7 +46,7 @@ bool Sphere::intersect(IntersectionData* id, Ray r)
 	if (t >= 0) // t needs to be positive to travel forward on the ray
 	{
 		id->t = t;
-		id->normal = n;
+		id->normal = glm::normalize(n);
 		id->material = material();
 		return true;
 	}
@@ -81,7 +82,7 @@ bool Plane::intersect(IntersectionData* id, Ray r)
 			n = -n; // intersection on the back side of the plane
 		
 		id->t = t;
-		id->normal = n;
+		id->normal = glm::normalize(n);
 		id->material = material();
 		return true;
 	}
@@ -93,11 +94,22 @@ bool Plane::intersect(IntersectionData* id, Ray r)
 
 Scene::Scene ()
 {
+	gen_ = new std::mt19937(rd_());
+	dis_ = new std::uniform_real_distribution<float>(0, 1);
+    
+
 	diffuse_red_ = new Material();
+	mirror_ = new Material();
 	diffuse_green_ = new Material();
 	diffuse_blue_ = new Material();
 	diffuse_white_ = new Material();
 	diffuse_gray_ = new Material();
+
+	mirror_->color_diffuse.data[0] = 0;
+	mirror_->color_diffuse.data[1] = 0;
+	mirror_->color_diffuse.data[2] = 0;
+	mirror_->specular_reflectance = 1;
+	mirror_->polish_power = 1;
 
 	diffuse_red_->color_diffuse.data[0] = 0.5;
 	diffuse_red_->color_diffuse.data[1] = 0;
@@ -152,16 +164,20 @@ Scene::Scene ()
 		diffuse_white_));
 
 
-	objects_.push_back(new Sphere(glm::vec3(0.7,0.7,-5), 0.5, diffuse_green_));
+	objects_.push_back(new Sphere(glm::vec3(0.5,-0.5,-4), 0.3, mirror_));
 
 }
 
 Scene::~Scene()
 {
+	delete gen_;
+	delete dis_;
+
 	for (int i = 0; i < objects_.size(); ++i)
 	{
 		delete objects_[i];
 	}
+	delete mirror_;
 	delete diffuse_red_;
 	delete diffuse_green_;
 	delete diffuse_blue_;
@@ -192,15 +208,99 @@ bool Scene::intersect(IntersectionData* id, Ray r)
 	return false;
 }
 
+glm::vec3 Scene::shake(glm::vec3 r, float power)
+{
+	// shaked will be a vector close to r but randomized to be different
+	// depending on power. power small => more randomization (cosine distribution)
+	glm::vec3 shaked = r;
+	// helper is just a random vector and can not possibly be
+	// a zero vector since r is normalized 
+	glm::vec3 helper = r + glm::vec3(1,1,1);
+	glm::vec3 tangent = glm::normalize(glm::cross(r, helper));
+
+	// Add randomized inclination and azimuth
+	// Inclination is random with cosine distribution
+	float inclination = pow( glm::asin(2 * (*dis_)(*gen_) - 1) / (M_PI / 2),
+		power) * (M_PI / 2);
+	// Azimuth is random with uniform distribution
+	float azimuth = 2 * M_PI * (*dis_)(*gen_);
+
+	// Change the actual vector
+	shaked = glm::rotate(
+		shaked,
+		inclination,
+		tangent);
+	shaked = glm::rotate(
+		shaked,
+		azimuth,
+		r);
+
+	// Normalize to avoid accumulating errors
+	return glm::normalize(shaked);
+}
+
 SpectralDistribution Scene::traceRay(Ray r)
 {
 	SpectralDistribution sd;
 	IntersectionData id;
 	if (intersect(&id, r))
 	{
-		sd.data[0] = id.material.color_diffuse.data[0];
-		sd.data[1] = id.material.color_diffuse.data[1];
-		sd.data[2] = id.material.color_diffuse.data[2];
+		// To make sure it does not intersect with itself again
+		glm::vec3 offset = id.normal * 0.001f;
+		r.position = r.position + id.t * r.direction + offset;
+		if (id.material.transmissivity &&
+			(*dis_)(*gen_) < id.material.transmissivity)
+		// The ray is transmitted through the material
+		{
+			glm::vec3 perfect_refraction = glm::refract(
+				r.direction,
+				id.normal,
+				r.material->refraction_index / id.material.refraction_index);
+			// Add some randomization to the direction vector
+			r.direction = shake(perfect_refraction, id.material.clearness_power);
+			// Recursively trace the reflected ray
+			return traceRay(r);
+
+			if (perfect_refraction == glm::vec3(0))
+			// Specular reflection
+			{ 
+				glm::vec3 perfect_reflection = glm::reflect(r.direction, id.normal);
+				// Add some randomization to the direction vector
+				r.direction = shake(perfect_reflection, id.material.polish_power);
+				// Recursively trace the reflected ray
+				return traceRay(r);
+			}
+			else
+			// Refraction
+			{
+
+			}
+
+			sd.data[0] = id.material.color_diffuse.data[0];
+			sd.data[1] = id.material.color_diffuse.data[1];
+			sd.data[2] = id.material.color_diffuse.data[2];
+		}
+		else
+		// The ray is reflected out of the material
+		{
+			if (id.material.specular_reflectance &&
+			(*dis_)(*gen_) < id.material.specular_reflectance)
+			// The ray will be reflected specularly
+			{
+				glm::vec3 perfect_reflection = glm::reflect(r.direction, id.normal);
+				// Add some randomization to the direction vector
+				r.direction = shake(perfect_reflection, id.material.polish_power);
+				// Recursively trace the reflected ray
+				return traceRay(r);
+			}
+			else
+			// The ray will be reflected diffusely
+			{
+				sd.data[0] = id.material.color_diffuse.data[0];
+				sd.data[1] = id.material.color_diffuse.data[1];
+				sd.data[2] = id.material.color_diffuse.data[2];
+			}
+		}
 	}
 	else
 	{

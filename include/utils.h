@@ -4,8 +4,17 @@
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
 
-struct SpectralDistribution
+class SpectralDistribution
 {
+public:
+	SpectralDistribution();
+	~SpectralDistribution();
+
+	SpectralDistribution operator+(const SpectralDistribution& sd);
+	SpectralDistribution operator-(const SpectralDistribution& sd);
+	SpectralDistribution operator+=(const SpectralDistribution& sd);
+	SpectralDistribution operator-=(const SpectralDistribution& sd);
+
 	static const int N_WAVELENGTHS = 3;
 	static const int MIN_WAVELENGTH = 300;
 	static const int MAX_WAVELENGTH = 700;
@@ -18,7 +27,7 @@ struct Material
 	SpectralDistribution color_specular;
 	float emittance; // [ 0 (non lightsource), inf]
 	float specular_reflectance; // [0 , 1]
-	float diffuse_reflectance; // [0 , 1]
+	//float diffuse_reflectance; // [0 , 1]
 	float transmissivity; // [0 , 1]
 	float refraction_index; // [1 (air) , 2.4 (diamond)]
 	float polish_power; // High => near perfect reflection

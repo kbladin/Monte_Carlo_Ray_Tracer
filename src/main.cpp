@@ -11,7 +11,7 @@ int savePPM(
 	const int height,
 	unsigned char* data)
 {
-	FILE *fp = fopen(file_name, "wb"); /* b - binary mode */
+	FILE *fp = fopen(file_name, "wb"); // b - binary mode
 	fprintf(fp, "P6\n%d %d\n255\n", width, height);
 	fwrite(data, 1, width * height * 3, fp);
 	fclose(fp);
