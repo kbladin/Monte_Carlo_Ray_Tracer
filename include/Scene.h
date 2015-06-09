@@ -49,6 +49,10 @@ private:
 	std::vector<Object3D*> objects_;
 
 	Material* mirror_;
+	Material* glass_;
+	Material* air_;
+	Material* lamp_;
+
 	Material* diffuse_red_;
 	Material* diffuse_green_;
 	Material* diffuse_blue_;

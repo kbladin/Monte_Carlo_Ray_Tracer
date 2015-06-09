@@ -1,4 +1,5 @@
 #include <iostream>
+#include <cmath>
 
 #include <glm/glm.hpp>
 
@@ -20,22 +21,24 @@ int savePPM(
 
 int main(int argc, char const *argv[])
 {
+	static const int WIDTH = 100;
+	static const int HEIGHT = 70;
 	// The camera is used to cast appropriate initial rays
 	Camera c(
 		glm::vec3(0, 0, -1), // Eye (position to look at)
 		glm::vec3(0, 0, 0), // Center (position of camera)
 		glm::vec3(0, 1, 0), // Up vector
 		M_PI / 4, // Field of view in radians
-		800, // pixel width
-		600); // pixel height
+		WIDTH, // pixel width
+		HEIGHT); // pixel height
 
 	// 3D objects are contained in the Scene object
 	Scene s;
 
 	// intensities will hold image data
-	float intensities[c.width() * c.height() * 3]; // w * h * rgb
+	SpectralDistribution intensities[WIDTH * HEIGHT]; // w * h * rgb
 	// intensities need to be converted to rgb pixel data for displaying
-	unsigned char pixel_values[c.width() * c.height() * 3]; // w * h * rgb
+	unsigned char pixel_values[WIDTH * HEIGHT * 3]; // w * h * rgb
 
 	// Loop through all pixels to calculate their intensities by ray-tracing
 	// This loop could and should be parallellized.
@@ -43,20 +46,29 @@ int main(int argc, char const *argv[])
 	{
 		for (int y = 0; y < c.height(); ++y)
 		{
+			std::random_device rd;
+			std::mt19937 gen(rd());
+			std::uniform_real_distribution<float> dis(-0.5, 0.5);
+
+			int index = (x + y * c.width());
+			SpectralDistribution sd;
+
+			static const int SUB_SAMPLING = 100;
+
+			for (int i = 0; i < SUB_SAMPLING; ++i)
+			{
 			// Subsampling loop goes here later
 			// Trying to cast a ray
 			Ray r = c.castRay(
 				x, // Pixel x 
 				y, // Pixel y 
-				0, // Parameter x (>= -0.5 and < 0.5), for subsampling
-				0); // Parameter y (>= -0.5 and < 0.5), for subsampling
-			SpectralDistribution sd = s.traceRay(r);
-
-			int index = (x + y * c.width()) * 3;
-			intensities[index + 0] = sd.data[0]; // Red
-			intensities[index + 1] = sd.data[1]; // Green
-			intensities[index + 2] = sd.data[2]; // Blue
+				dis(gen), // Parameter x (>= -0.5 and < 0.5), for subsampling
+				dis(gen)); // Parameter y (>= -0.5 and < 0.5), for subsampling
+			sd += s.traceRay(r);
+			}
+			intensities[index] = sd / SUB_SAMPLING;
 		}
+		std::cout << x * 100 / float(c.width()) << "\% finished." << std::endl;
 	}
 
 	// Convert to byte data
@@ -67,10 +79,10 @@ int main(int argc, char const *argv[])
 	{
 		for (int y = 0; y < c.height(); ++y)
 		{
-			int index = (x + y * c.width()) * 3;
-			pixel_values[index + 0] = char(int (intensities[index + 0] * 255)); // Red
-			pixel_values[index + 1] = char(int (intensities[index + 1] * 255)); // Green
-			pixel_values[index + 2] = char(int (intensities[index + 2] * 255)); // Blue
+			int index = (x + y * c.width());
+			pixel_values[index * 3 + 0] = char(int(glm::clamp(intensities[index][0], 0.0f, 1.0f) * 255)); // Red
+			pixel_values[index * 3 + 1] = char(int(glm::clamp(intensities[index][1], 0.0f, 1.0f) * 255)); // Green
+			pixel_values[index * 3 + 2] = char(int(glm::clamp(intensities[index][2], 0.0f, 1.0f) * 255)); // Blue
 		}
 	}
 

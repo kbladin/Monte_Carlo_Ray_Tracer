@@ -40,7 +40,6 @@ bool Sphere::intersect(IntersectionData* id, Ray r)
 		{
 			// the intersection is on the inside of the sphere
 			t = -p_half + sqrt(to_square);
-			n = POSITION_ - (r.position + t*r.direction);
 		}
 	}
 	if (t >= 0) // t needs to be positive to travel forward on the ray
@@ -78,9 +77,6 @@ bool Plane::intersect(IntersectionData* id, Ray r)
 		t >= 0) // t needs to be positive to travel forward on the ray
 	{
 		glm::vec3 n = glm::cross(u * (P1_ - P0_), v * (P2_ - P0_));
-		if (glm::dot(r.direction, n) > 0)
-			n = -n; // intersection on the back side of the plane
-		
 		id->t = t;
 		id->normal = glm::normalize(n);
 		id->material = material();
@@ -97,59 +93,78 @@ Scene::Scene ()
 	gen_ = new std::mt19937(rd_());
 	dis_ = new std::uniform_real_distribution<float>(0, 1);
     
-
-	diffuse_red_ = new Material();
 	mirror_ = new Material();
+	glass_ = new Material();
+	diffuse_red_ = new Material();
 	diffuse_green_ = new Material();
 	diffuse_blue_ = new Material();
 	diffuse_white_ = new Material();
 	diffuse_gray_ = new Material();
+	air_ = new Material();
+	lamp_ = new Material();
 
-	mirror_->color_diffuse.data[0] = 0;
-	mirror_->color_diffuse.data[1] = 0;
-	mirror_->color_diffuse.data[2] = 0;
+	mirror_->color_diffuse[0] = 0;
+	mirror_->color_diffuse[1] = 0;
+	mirror_->color_diffuse[2] = 0;
+	mirror_->color_specular[0] = 1;
+	mirror_->color_specular[1] = 1;
+	mirror_->color_specular[2] = 1;
 	mirror_->specular_reflectance = 1;
-	mirror_->polish_power = 1;
+	mirror_->polish_power = 20;
 
-	diffuse_red_->color_diffuse.data[0] = 0.5;
-	diffuse_red_->color_diffuse.data[1] = 0;
-	diffuse_red_->color_diffuse.data[2] = 0;
+	glass_->color_diffuse[0] = 1;
+	glass_->color_diffuse[1] = 1;
+	glass_->color_diffuse[2] = 1;
+	glass_->specular_reflectance = 0;
+	glass_->transmissivity = 1;
+	glass_->refraction_index = 1.3;
+	glass_->clearness_power = 20;
 
-	diffuse_green_->color_diffuse.data[0] = 0;
-	diffuse_green_->color_diffuse.data[1] = 0.5;
-	diffuse_green_->color_diffuse.data[2] = 0;
+	*air_ = Material::air();
 
-	diffuse_blue_->color_diffuse.data[0] = 0;
-	diffuse_blue_->color_diffuse.data[1] = 0;
-	diffuse_blue_->color_diffuse.data[2] = 0.5;
+	lamp_->color_diffuse[0] = 1;
+	lamp_->color_diffuse[1] = 1;
+	lamp_->color_diffuse[2] = 1;
+	lamp_->emittance = 10;
 
-	diffuse_white_->color_diffuse.data[0] = 1;
-	diffuse_white_->color_diffuse.data[1] = 1;
-	diffuse_white_->color_diffuse.data[2] = 1;
+	diffuse_red_->color_diffuse[0] = 0.5;
+	diffuse_red_->color_diffuse[1] = 0;
+	diffuse_red_->color_diffuse[2] = 0;
 
-	diffuse_gray_->color_diffuse.data[0] = 0.5;
-	diffuse_gray_->color_diffuse.data[1] = 0.5;
-	diffuse_gray_->color_diffuse.data[2] = 0.5;
+	diffuse_green_->color_diffuse[0] = 0;
+	diffuse_green_->color_diffuse[1] = 0.5;
+	diffuse_green_->color_diffuse[2] = 0;
 
+	diffuse_blue_->color_diffuse[0] = 0;
+	diffuse_blue_->color_diffuse[1] = 0;
+	diffuse_blue_->color_diffuse[2] = 0.5;
 
+	diffuse_white_->color_diffuse[0] = 1;
+	diffuse_white_->color_diffuse[1] = 1;
+	diffuse_white_->color_diffuse[2] = 1;
+
+	diffuse_gray_->color_diffuse[0] = 0.5;
+	diffuse_gray_->color_diffuse[1] = 0.5;
+	diffuse_gray_->color_diffuse[2] = 0.5;
+	
 	// Back
 	objects_.push_back(new Plane(
 		glm::vec3(-1,-1,-5), // P0
 		glm::vec3(1,-1,-5), // P1
 		glm::vec3(-1,1,-5), // P2
-		diffuse_gray_));
+		diffuse_white_));
 	// Left
 	objects_.push_back(new Plane(
 		glm::vec3(-1,-1,-5), // P0
-		glm::vec3(-1,-1,-0), // P1
-		glm::vec3(-1,1,-5), // P2
+		glm::vec3(-1,1,-5), // P1
+		glm::vec3(-1,-1,-0), // P2
 		diffuse_red_));
 	// Right
 	objects_.push_back(new Plane(
 		glm::vec3(1,-1,-5), // P0
 		glm::vec3(1,-1,-0), // P1
 		glm::vec3(1,1,-5), // P2
-		diffuse_blue_));
+		diffuse_green_));
 	// Roof
 	objects_.push_back(new Plane(
 		glm::vec3(-1,1,-5), // P0
@@ -159,13 +174,13 @@ Scene::Scene ()
 	// Floor
 	objects_.push_back(new Plane(
 		glm::vec3(-1,-1,-5), // P0
-		glm::vec3(1,-1,-5), // P1
-		glm::vec3(-1,-1,-0), // P2
+		glm::vec3(-1,-1,-0), // P1
+		glm::vec3(1,-1,-5), // P2
 		diffuse_white_));
 
-
 	objects_.push_back(new Sphere(glm::vec3(0.5,-0.5,-4), 0.3, mirror_));
-
+	objects_.push_back(new Sphere(glm::vec3(-0.3,-0.5,-3), 0.2, glass_));
+	objects_.push_back(new Sphere(glm::vec3(0,1,-4), 0.2, lamp_));
 }
 
 Scene::~Scene()
@@ -178,11 +193,14 @@ Scene::~Scene()
 		delete objects_[i];
 	}
 	delete mirror_;
+	delete glass_;
 	delete diffuse_red_;
 	delete diffuse_green_;
 	delete diffuse_blue_;
 	delete diffuse_white_;
 	delete diffuse_gray_;
+	delete air_;
+	delete lamp_;
 }
 
 bool Scene::intersect(IntersectionData* id, Ray r)
@@ -245,9 +263,22 @@ SpectralDistribution Scene::traceRay(Ray r)
 	IntersectionData id;
 	if (intersect(&id, r))
 	{
+		if (id.material.emittance)
+		{
+			sd = id.material.color_diffuse * id.material.emittance;
+			return sd;
+		}
+
+		bool inside = false;
+		if (glm::dot(id.normal, r.direction) > 0)
+		// The ray is inside an object
+		{
+			inside = true;
+		}
+
 		// To make sure it does not intersect with itself again
 		glm::vec3 offset = id.normal * 0.001f;
-		r.position = r.position + id.t * r.direction + offset;
+
 		if (id.material.transmissivity &&
 			(*dis_)(*gen_) < id.material.transmissivity)
 		// The ray is transmitted through the material
@@ -255,34 +286,41 @@ SpectralDistribution Scene::traceRay(Ray r)
 			glm::vec3 perfect_refraction = glm::refract(
 				r.direction,
 				id.normal,
-				r.material->refraction_index / id.material.refraction_index);
-			// Add some randomization to the direction vector
-			r.direction = shake(perfect_refraction, id.material.clearness_power);
-			// Recursively trace the reflected ray
-			return traceRay(r);
-
+				r.material.refraction_index / id.material.refraction_index);
 			if (perfect_refraction == glm::vec3(0))
 			// Specular reflection
-			{ 
+			{
+				r.position = r.position + id.t * r.direction +
+					(inside ? -offset : offset);
+
 				glm::vec3 perfect_reflection = glm::reflect(r.direction, id.normal);
 				// Add some randomization to the direction vector
 				r.direction = shake(perfect_reflection, id.material.polish_power);
 				// Recursively trace the reflected ray
-				return traceRay(r);
+				return traceRay(r) * id.material.color_specular;
 			}
 			else
 			// Refraction
 			{
-
+				r.position = r.position + id.t * r.direction +
+					(inside ? offset : -offset);
+				// Add some randomization to the direction vector
+				r.direction = shake(perfect_refraction, id.material.clearness_power);
+				// Change the material the ray is travelling in
+				if (inside)
+					r.material = *air_;
+				else
+					r.material = id.material;
+				// Recursively trace the refracted ray
+				return traceRay(r) * id.material.color_diffuse;
 			}
-
-			sd.data[0] = id.material.color_diffuse.data[0];
-			sd.data[1] = id.material.color_diffuse.data[1];
-			sd.data[2] = id.material.color_diffuse.data[2];
 		}
 		else
 		// The ray is reflected out of the material
 		{
+			r.position = r.position + id.t * r.direction +
+				(inside ? -offset : offset);
+
 			if (id.material.specular_reflectance &&
 			(*dis_)(*gen_) < id.material.specular_reflectance)
 			// The ray will be reflected specularly
@@ -291,22 +329,29 @@ SpectralDistribution Scene::traceRay(Ray r)
 				// Add some randomization to the direction vector
 				r.direction = shake(perfect_reflection, id.material.polish_power);
 				// Recursively trace the reflected ray
-				return traceRay(r);
+				return traceRay(r) * id.material.color_specular;
 			}
 			else
 			// The ray will be reflected diffusely
 			{
-				sd.data[0] = id.material.color_diffuse.data[0];
-				sd.data[1] = id.material.color_diffuse.data[1];
-				sd.data[2] = id.material.color_diffuse.data[2];
+				if (inside)
+				{
+					sd[0] = 0;
+					sd[1] = 0;
+					sd[2] = 0;
+				} else
+				{
+					r.direction = shake(id.normal, 1);
+					return traceRay(r) * id.material.color_diffuse;
+				}
 			}
 		}
 	}
 	else
 	{
-		sd.data[0] = 0;
-		sd.data[1] = 0;
-		sd.data[2] = 0;
+		sd[0] = 0;
+		sd[1] = 0;
+		sd[2] = 0;
 	}
 	return sd;
 }

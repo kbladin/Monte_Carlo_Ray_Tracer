@@ -10,10 +10,17 @@ public:
 	SpectralDistribution();
 	~SpectralDistribution();
 
-	SpectralDistribution operator+(const SpectralDistribution& sd);
-	SpectralDistribution operator-(const SpectralDistribution& sd);
+	friend std::ostream& operator<<(std::ostream& os, const SpectralDistribution& sd);
+	friend SpectralDistribution operator*(float f, const SpectralDistribution& sd);
+	float& operator[](const int i);
+	SpectralDistribution operator+(const SpectralDistribution& sd) const;
+	SpectralDistribution operator-(const SpectralDistribution& sd) const;
+	SpectralDistribution operator/(const float& f) const;
+	SpectralDistribution operator*(const float& f) const;
+	SpectralDistribution operator*(const SpectralDistribution& sd) const;
 	SpectralDistribution operator+=(const SpectralDistribution& sd);
 	SpectralDistribution operator-=(const SpectralDistribution& sd);
+	SpectralDistribution operator/=(const float& f);
 
 	static const int N_WAVELENGTHS = 3;
 	static const int MIN_WAVELENGTH = 300;
@@ -32,13 +39,15 @@ struct Material
 	float refraction_index; // [1 (air) , 2.4 (diamond)]
 	float polish_power; // High => near perfect reflection
 	float clearness_power; // High => near perfect refraction
+
+	static Material air();
 };
 
 struct Ray
 {
 	glm::vec3 position;
 	glm::vec3 direction;
-	Material* material; // The material the ray is travelling in
+	Material material; // The material the ray is travelling in
 };
 
 struct IntersectionData
