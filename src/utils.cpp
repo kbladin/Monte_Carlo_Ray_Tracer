@@ -57,6 +57,16 @@ SpectralDistribution SpectralDistribution::operator-(const SpectralDistribution&
 	return to_return;
 }
 
+SpectralDistribution SpectralDistribution::operator^(const float& f) const
+{
+	SpectralDistribution to_return;
+	for (int i = 0; i < N_WAVELENGTHS; ++i)
+	{
+		to_return.data[i] = pow(data[i], f);
+	}
+	return to_return;
+}
+
 SpectralDistribution SpectralDistribution::operator/(const float& f) const
 {
 	SpectralDistribution to_return;

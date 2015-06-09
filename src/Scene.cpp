@@ -35,12 +35,12 @@ bool Sphere::intersect(IntersectionData* id, Ray r)
 	// we choose the closest one that gives a positive t
 	{
 		t = -p_half - sqrt(to_square); // First the one on the front face
-		n = r.position + t*r.direction - POSITION_;
 		if (t < 0) // if we are inside the sphere
 		{
 			// the intersection is on the inside of the sphere
 			t = -p_half + sqrt(to_square);
 		}
+		n = r.position + t*r.direction - POSITION_;
 	}
 	if (t >= 0) // t needs to be positive to travel forward on the ray
 	{
@@ -112,13 +112,14 @@ Scene::Scene ()
 	mirror_->specular_reflectance = 1;
 	mirror_->polish_power = 20;
 
-	glass_->color_diffuse[0] = 1;
-	glass_->color_diffuse[1] = 1;
-	glass_->color_diffuse[2] = 1;
+	glass_->color_diffuse[0] = 0.5;
+	glass_->color_diffuse[1] = 0.5;
+	glass_->color_diffuse[2] = 0.5;
 	glass_->specular_reflectance = 0;
 	glass_->transmissivity = 1;
-	glass_->refraction_index = 1.3;
-	glass_->clearness_power = 20;
+	glass_->refraction_index = 2;
+	glass_->clearness_power = 1000;
+	glass_->polish_power = 1000;
 
 	*air_ = Material::air();
 
@@ -260,6 +261,8 @@ glm::vec3 Scene::shake(glm::vec3 r, float power)
 SpectralDistribution Scene::traceRay(Ray r)
 {
 	SpectralDistribution sd;
+/*	if ((*dis_)(*gen_) < 0.1)
+		return sd;*/
 	IntersectionData id;
 	if (intersect(&id, r))
 	{
@@ -277,23 +280,31 @@ SpectralDistribution Scene::traceRay(Ray r)
 		}
 
 		// To make sure it does not intersect with itself again
-		glm::vec3 offset = id.normal * 0.001f;
+		glm::vec3 offset = id.normal * 0.00001f;
 
 		if (id.material.transmissivity &&
 			(*dis_)(*gen_) < id.material.transmissivity)
 		// The ray is transmitted through the material
+		// (or maybe reflected if Brewster angle reached)
 		{
+			glm::vec3 normal = inside ? -id.normal : id.normal;
 			glm::vec3 perfect_refraction = glm::refract(
 				r.direction,
-				id.normal,
+				normal,
 				r.material.refraction_index / id.material.refraction_index);
 			if (perfect_refraction == glm::vec3(0))
-			// Specular reflection
+			// Brewster angle reached, specular reflection
 			{
-				r.position = r.position + id.t * r.direction +
-					(inside ? -offset : offset);
+				if (inside)
+				{
+					r.position = r.position + id.t * r.direction -offset;
+				}
+				else
+				{
+					r.position = r.position + id.t * r.direction +offset;
+				}
+				glm::vec3 perfect_reflection = glm::reflect(r.direction, normal);
 
-				glm::vec3 perfect_reflection = glm::reflect(r.direction, id.normal);
 				// Add some randomization to the direction vector
 				r.direction = shake(perfect_reflection, id.material.polish_power);
 				// Recursively trace the reflected ray
@@ -302,17 +313,26 @@ SpectralDistribution Scene::traceRay(Ray r)
 			else
 			// Refraction
 			{
-				r.position = r.position + id.t * r.direction +
-					(inside ? offset : -offset);
-				// Add some randomization to the direction vector
-				r.direction = shake(perfect_refraction, id.material.clearness_power);
-				// Change the material the ray is travelling in
 				if (inside)
+				{
+					// Change the material the ray is travelling in
 					r.material = *air_;
+					r.position = r.position + id.t * r.direction +offset;
+					// Add some randomization to the direction vector
+					r.direction = shake(perfect_refraction, id.material.clearness_power);
+					// Recursively trace the refracted ray
+					return traceRay(r);
+				}
 				else
+				{
+					// Change the material the ray is travelling in
 					r.material = id.material;
-				// Recursively trace the refracted ray
-				return traceRay(r) * id.material.color_diffuse;
+					r.position = r.position + id.t * r.direction -offset;
+					// Add some randomization to the direction vector
+					r.direction = shake(perfect_refraction, id.material.clearness_power);
+					// Recursively trace the refracted ray
+					return traceRay(r); 
+				}
 			}
 		}
 		else

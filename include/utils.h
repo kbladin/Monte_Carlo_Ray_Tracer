@@ -15,6 +15,7 @@ public:
 	float& operator[](const int i);
 	SpectralDistribution operator+(const SpectralDistribution& sd) const;
 	SpectralDistribution operator-(const SpectralDistribution& sd) const;
+	SpectralDistribution operator^(const float& f) const;
 	SpectralDistribution operator/(const float& f) const;
 	SpectralDistribution operator*(const float& f) const;
 	SpectralDistribution operator*(const SpectralDistribution& sd) const;

@@ -2,6 +2,7 @@
 #include <cmath>
 
 #include <glm/glm.hpp>
+#include <libiomp/omp.h>
 
 #include "../include/Camera.h"
 #include "../include/Scene.h"
@@ -21,8 +22,8 @@ int savePPM(
 
 int main(int argc, char const *argv[])
 {
-	static const int WIDTH = 100;
-	static const int HEIGHT = 70;
+	static const int WIDTH = 50;
+	static const int HEIGHT = 30;
 	// The camera is used to cast appropriate initial rays
 	Camera c(
 		glm::vec3(0, 0, -1), // Eye (position to look at)
@@ -42,9 +43,16 @@ int main(int argc, char const *argv[])
 
 	// Loop through all pixels to calculate their intensities by ray-tracing
 	// This loop could and should be parallellized.
-	for (int x = 0; x < c.width(); ++x)
+
+	#pragma omp parallel
 	{
-		for (int y = 0; y < c.height(); ++y)
+		std::cout << "Hello World!\n";
+	}
+
+
+	for (int x = 0; x < WIDTH; ++x)
+	{
+		for (int y = 0; y < HEIGHT; ++y)
 		{
 			std::random_device rd;
 			std::mt19937 gen(rd());
@@ -53,7 +61,7 @@ int main(int argc, char const *argv[])
 			int index = (x + y * c.width());
 			SpectralDistribution sd;
 
-			static const int SUB_SAMPLING = 100;
+			static const int SUB_SAMPLING = 500;
 
 			for (int i = 0; i < SUB_SAMPLING; ++i)
 			{
@@ -88,6 +96,9 @@ int main(int argc, char const *argv[])
 
 	// Save the image data to file
 	savePPM("test.ppm", c.width(), c.height(), pixel_values);
-
+	
+	// Make a beep sound
+	std::cout << '\a';
+	
 	return 0;
 }
