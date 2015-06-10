@@ -1,8 +1,10 @@
 #include <iostream>
 #include <cmath>
+#include <stdio.h>
+#include <time.h>
 
 #include <glm/glm.hpp>
-#include <libiomp/omp.h>
+//#include <libiomp/omp.h>
 
 #include "../include/Camera.h"
 #include "../include/Scene.h"
@@ -20,10 +22,23 @@ int savePPM(
 	return EXIT_SUCCESS;
 }
 
+// Get current date/time, format is YYYY-MM-DD.HH:mm:ss
+const std::string currentDateTime() {
+    time_t     now = time(0);
+    struct tm  tstruct;
+    char       buf[80];
+    tstruct = *localtime(&now);
+    // Visit http://en.cppreference.com/w/cpp/chrono/c/strftime
+    // for more information about date/time format
+    strftime(buf, sizeof(buf), "%Y-%m-%d-%X", &tstruct);
+
+    return buf;
+}
+
 int main(int argc, char const *argv[])
 {
-	static const int WIDTH = 50;
-	static const int HEIGHT = 30;
+	static const int WIDTH = 8;
+	static const int HEIGHT = 6;
 	// The camera is used to cast appropriate initial rays
 	Camera c(
 		glm::vec3(0, 0, -1), // Eye (position to look at)
@@ -41,15 +56,11 @@ int main(int argc, char const *argv[])
 	// intensities need to be converted to rgb pixel data for displaying
 	unsigned char pixel_values[WIDTH * HEIGHT * 3]; // w * h * rgb
 
+	time_t time_start, time_now;
+	time(&time_start);
+
 	// Loop through all pixels to calculate their intensities by ray-tracing
 	// This loop could and should be parallellized.
-
-	#pragma omp parallel
-	{
-		std::cout << "Hello World!\n";
-	}
-
-
 	for (int x = 0; x < WIDTH; ++x)
 	{
 		for (int y = 0; y < HEIGHT; ++y)
@@ -61,7 +72,7 @@ int main(int argc, char const *argv[])
 			int index = (x + y * c.width());
 			SpectralDistribution sd;
 
-			static const int SUB_SAMPLING = 500;
+			static const int SUB_SAMPLING = 1000;
 
 			for (int i = 0; i < SUB_SAMPLING; ++i)
 			{
@@ -70,13 +81,23 @@ int main(int argc, char const *argv[])
 			Ray r = c.castRay(
 				x, // Pixel x 
 				y, // Pixel y 
-				dis(gen), // Parameter x (>= -0.5 and < 0.5), for subsampling
-				dis(gen)); // Parameter y (>= -0.5 and < 0.5), for subsampling
+				0, // Parameter x (>= -0.5 and < 0.5), for subsampling
+				0); // Parameter y (>= -0.5 and < 0.5), for subsampling
 			sd += s.traceRay(r);
 			}
 			intensities[index] = sd / SUB_SAMPLING;
 		}
-		std::cout << x * 100 / float(c.width()) << "\% finished." << std::endl;
+		float percent_finished = (x+1) * 100 / float(c.width());
+	    time(&time_now);
+		double time_elapsed = difftime(time_now, time_start);
+		double time_left = (time_elapsed / percent_finished) *
+			(100 - percent_finished);
+		int hours = time_left / (60 * 60);
+		int minutes = (int(time_left) % (60 * 60)) / 60;
+		int seconds = int(time_left) % 60;
+
+		std::cout << percent_finished << " \% finished." << std::endl;
+		std::cout << "Estimated time left is " << hours << "h:" << minutes << "m:" << seconds << "s." << std::endl;
 	}
 
 	// Convert to byte data
@@ -94,8 +115,10 @@ int main(int argc, char const *argv[])
 		}
 	}
 
+  std::string file_name = currentDateTime() + ".ppm";
+  
 	// Save the image data to file
-	savePPM("test.ppm", c.width(), c.height(), pixel_values);
+	savePPM(file_name.c_str(), c.width(), c.height(), pixel_values);
 	
 	// Make a beep sound
 	std::cout << '\a';
