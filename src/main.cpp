@@ -37,8 +37,9 @@ const std::string currentDateTime() {
 
 int main(int argc, char const *argv[])
 {
-	static const int WIDTH = 8;
-	static const int HEIGHT = 6;
+  
+	static const int WIDTH = 320;
+	static const int HEIGHT = 240;
 	// The camera is used to cast appropriate initial rays
 	Camera c(
 		glm::vec3(0, 0, -1), // Eye (position to look at)
@@ -52,9 +53,9 @@ int main(int argc, char const *argv[])
 	Scene s;
 
 	// intensities will hold image data
-	SpectralDistribution intensities[WIDTH * HEIGHT]; // w * h * rgb
+	SpectralDistribution* intensities = new SpectralDistribution[WIDTH * HEIGHT]; // w * h * rgb
 	// intensities need to be converted to rgb pixel data for displaying
-	unsigned char pixel_values[WIDTH * HEIGHT * 3]; // w * h * rgb
+	unsigned char* pixel_values = new unsigned char[WIDTH * HEIGHT * 3]; // w * h * rgb
 
 	time_t time_start, time_now;
 	time(&time_start);
@@ -72,7 +73,7 @@ int main(int argc, char const *argv[])
 			int index = (x + y * c.width());
 			SpectralDistribution sd;
 
-			static const int SUB_SAMPLING = 1000;
+			static const int SUB_SAMPLING = 5;
 
 			for (int i = 0; i < SUB_SAMPLING; ++i)
 			{
@@ -81,9 +82,9 @@ int main(int argc, char const *argv[])
 			Ray r = c.castRay(
 				x, // Pixel x 
 				y, // Pixel y 
-				0, // Parameter x (>= -0.5 and < 0.5), for subsampling
-				0); // Parameter y (>= -0.5 and < 0.5), for subsampling
-			sd += s.traceRay(r);
+				dis(gen), // Parameter x (>= -0.5 and < 0.5), for subsampling
+				dis(gen)); // Parameter y (>= -0.5 and < 0.5), for subsampling
+			sd += s.traceRay(r, 0);
 			}
 			intensities[index] = sd / SUB_SAMPLING;
 		}
@@ -104,22 +105,26 @@ int main(int argc, char const *argv[])
 	// This conversion should be more sophisticated later on,
 	// Gamma correction and / or transformation to logarithmic scale etc.
 	// It should also be dependent on the maximum intensity value.
+	float gamma = 0.5;
 	for (int x = 0; x < c.width(); ++x)
 	{
 		for (int y = 0; y < c.height(); ++y)
 		{
 			int index = (x + y * c.width());
-			pixel_values[index * 3 + 0] = char(int(glm::clamp(intensities[index][0], 0.0f, 1.0f) * 255)); // Red
-			pixel_values[index * 3 + 1] = char(int(glm::clamp(intensities[index][1], 0.0f, 1.0f) * 255)); // Green
-			pixel_values[index * 3 + 2] = char(int(glm::clamp(intensities[index][2], 0.0f, 1.0f) * 255)); // Blue
+			pixel_values[index * 3 + 0] = char(int(glm::clamp(glm::pow(intensities[index][0],gamma), 0.0f, 1.0f) * 255)); // Red
+			pixel_values[index * 3 + 1] = char(int(glm::clamp(glm::pow(intensities[index][1],gamma), 0.0f, 1.0f) * 255)); // Green
+			pixel_values[index * 3 + 2] = char(int(glm::clamp(glm::pow(intensities[index][2],gamma), 0.0f, 1.0f) * 255)); // Blue
 		}
 	}
 
-  std::string file_name = currentDateTime() + ".ppm";
+	std::string file_name = currentDateTime() + ".ppm";
   
 	// Save the image data to file
-	savePPM(file_name.c_str(), c.width(), c.height(), pixel_values);
+	savePPM(file_name.c_str(), WIDTH, HEIGHT, pixel_values);
 	
+	delete [] intensities;
+	delete [] pixel_values;
+  
 	// Make a beep sound
 	std::cout << '\a';
 	

@@ -15,6 +15,11 @@ Sphere::Sphere(glm::vec3 position, float radius, Material* material) :
 	Object3D(material), POSITION_(position), RADIUS_(radius)
 {}
 
+glm::vec3 Sphere::getPointOnSurface(float u, float v)
+{
+	return glm::vec3();
+}
+
 bool Sphere::intersect(IntersectionData* id, Ray r)
 {
 	// if to_square is negative we have imaginary solutions,
@@ -86,6 +91,13 @@ bool Plane::intersect(IntersectionData* id, Ray r)
 		return false;
 }
 
+glm::vec3 Plane::getPointOnSurface(float u, float v)
+{
+	glm::vec3 v1 = P1_ - P0_;
+	glm::vec3 v2 = P2_ - P0_;
+	return P0_ + u * v1 + v * v2;
+}
+
 // --- Scene class functions --- //
 
 Scene::Scene ()
@@ -109,8 +121,9 @@ Scene::Scene ()
 	mirror_->color_specular[0] = 1;
 	mirror_->color_specular[1] = 1;
 	mirror_->color_specular[2] = 1;
+	mirror_->reflectance = 1;
 	mirror_->specular_reflectance = 1;
-	mirror_->polish_power = 2;
+	mirror_->polish_power = 1000;
 
 	glass_->color_diffuse[0] = 0.5;
 	glass_->color_diffuse[1] = 0.5;
@@ -118,8 +131,9 @@ Scene::Scene ()
 	glass_->color_specular[0] = 1;
 	glass_->color_specular[1] = 1;
 	glass_->color_specular[2] = 1;
-	glass_->specular_reflectance = 1;
-	glass_->transmissivity = 0.9;
+	glass_->reflectance = 0;
+	glass_->specular_reflectance = 0;
+	glass_->transmissivity = 1;
 	glass_->refraction_index = 2;
 	glass_->clearness_power = 1000;
 	glass_->polish_power = 1000;
@@ -129,27 +143,34 @@ Scene::Scene ()
 	lamp_->color_diffuse[0] = 1;
 	lamp_->color_diffuse[1] = 1;
 	lamp_->color_diffuse[2] = 1;
-	lamp_->emittance = 20;
+	lamp_->reflectance = 1;
 
-	diffuse_red_->color_diffuse[0] = 0.5;
-	diffuse_red_->color_diffuse[1] = 0;
-	diffuse_red_->color_diffuse[2] = 0;
+	lamp_->emittance = 3;
 
-	diffuse_green_->color_diffuse[0] = 0;
-	diffuse_green_->color_diffuse[1] = 0.5;
-	diffuse_green_->color_diffuse[2] = 0;
+	diffuse_red_->color_diffuse[0] = 1;
+	diffuse_red_->color_diffuse[1] = 0.2;
+	diffuse_red_->color_diffuse[2] = 0.2;
+	diffuse_red_->reflectance = 1;
 
-	diffuse_blue_->color_diffuse[0] = 0;
-	diffuse_blue_->color_diffuse[1] = 0;
-	diffuse_blue_->color_diffuse[2] = 0.5;
+	diffuse_green_->color_diffuse[0] = 0.2;
+	diffuse_green_->color_diffuse[1] = 1;
+	diffuse_green_->color_diffuse[2] = 0.2;
+	diffuse_green_->reflectance = 1;
+
+	diffuse_blue_->color_diffuse[0] = 0.2;
+	diffuse_blue_->color_diffuse[1] = 0.2;
+	diffuse_blue_->color_diffuse[2] = 1;
+	diffuse_blue_->reflectance = 1;
 
 	diffuse_white_->color_diffuse[0] = 1;
 	diffuse_white_->color_diffuse[1] = 1;
 	diffuse_white_->color_diffuse[2] = 1;
+	diffuse_white_->reflectance = 1;
 
 	diffuse_gray_->color_diffuse[0] = 0.5;
 	diffuse_gray_->color_diffuse[1] = 0.5;
 	diffuse_gray_->color_diffuse[2] = 0.5;
+	diffuse_gray_->reflectance = 1;
 	
 	// Back
 	objects_.push_back(new Plane(
@@ -182,9 +203,15 @@ Scene::Scene ()
 		glm::vec3(1,-1,-5), // P2
 		diffuse_white_));
 
-	objects_.push_back(new Sphere(glm::vec3(0.5,-0.5,-4), 0.3, mirror_));
+	objects_.push_back(new Sphere(glm::vec3(0.5,-0.7,-4), 0.3, mirror_));
 	objects_.push_back(new Sphere(glm::vec3(-0.5,-0.5,-4), 0.3, glass_));
-	objects_.push_back(new Sphere(glm::vec3(0,1,-4), 0.2, lamp_));
+	objects_.push_back(new Sphere(glm::vec3(0.2,0.2,-4.5), 0.2, diffuse_blue_));
+	float size = 0.3;
+	objects_.push_back(new Plane(
+		glm::vec3(-size,1 - 0.01,-5 + (1 - size)), // P0
+		glm::vec3(size,1 - 0.01,-5 + (1 - size)), // P1
+		glm::vec3(-size,1 - 0.01,-5 + (1 + size)), // P2
+		lamp_));
 }
 
 Scene::~Scene()
@@ -264,161 +291,182 @@ glm::vec3 Scene::shake(glm::vec3 r, float power)
 	return glm::normalize(shaked);
 }
 
-SpectralDistribution Scene::traceRay(Ray r)
+SpectralDistribution Scene::traceRay(Ray r, int iteration)
 {
-	SpectralDistribution sd;
+	//SpectralDistribution sd;
 	IntersectionData id;
 	if (intersect(&id, r))
 	{
-		// Russian roulette
-		// bool end_here = true;// (*dis_)(*gen_) < 0.2;
-
 		if (id.material.emittance)
 		{
-			sd += id.material.color_diffuse * id.material.emittance;
-			return sd; // try removing this
+			return id.material.color_diffuse * id.material.emittance;
 		}
 
+		bool end_here = iteration >= 1;
 		Ray recursive_ray = r;
-
+		// To make sure it does not intersect with itself again
+		glm::vec3 offset = id.normal * 0.00001f;
 		bool inside = false;
 		if (glm::dot(id.normal, r.direction) > 0)
 		// The ray is inside an object
 		{
 			inside = true;
 		}
+		// Russian roulette
+		//float roll_die = 0.5;
+		float roll_reflect = id.material.reflectance * id.material.reflectance / (id.material.reflectance + id.material.transmissivity);
+		float roll_refract = id.material.transmissivity / (id.material.reflectance + id.material.transmissivity);
+		float roll = (*dis_)(*gen_); // [0 , 1]
+		if (roll_reflect && roll < roll_reflect)
+		{ // The ray is reflected
+			recursive_ray.position = r.position + id.t * r.direction +
+				(inside ? -offset : offset);
 
-		// To make sure it does not intersect with itself again
-		glm::vec3 offset = id.normal * 0.00001f;
+			// Russian roulette
+			float roll_specular = id.material.specular_reflectance;
+			float roll = (*dis_)(*gen_); // [0 , 1]
+			if (roll_specular && roll < roll_specular)
+			{ // The ray is reflected specularly
+				if (iteration >= 5)
+					return SpectralDistribution();
+				glm::vec3 perfect_reflection = glm::reflect(r.direction, id.normal);
+				// Add some randomization to the direction vector
+				recursive_ray.direction = shake(perfect_reflection, id.material.polish_power);
+				// Recursively trace the reflected ray
+				return traceRay(recursive_ray, iteration + 1) * id.material.color_specular;
+			}
+			else
+			{ // The ray is reflected diffusely
+				SpectralDistribution L_local;
+				// Cast shadow rays
+				static const int n_samples = 10;
+				for (int i = 0; i < n_samples; ++i)
+				{
+					Ray shadow_ray = recursive_ray;
+					glm::vec3 differance = objects_[8]->getPointOnSurface((*dis_)(*gen_),(*dis_)(*gen_)) - shadow_ray.position;
+					shadow_ray.direction = glm::normalize(differance);
 
-		float transmissive_importance = id.material.transmissivity;
-		float reflective_importance = 1 - id.material.transmissivity;
-		float specular_importance = id.material.specular_reflectance;
-		float diffuse_importance = 1 - id.material.specular_reflectance; 
+					float brdf = 1 / (2 * M_PI); // Dependent on inclination and azimuth
+					float cos_angle = glm::dot(shadow_ray.direction, id.normal);
 
-		if (transmissive_importance)
-		// The ray is transmitted through the material
-		// (or maybe reflected if Brewster angle reached)
-		{
-			/*
-			if (end_here)
-				return sd;
-		*/
+					IntersectionData shadow_id;
+
+					if(intersect(&shadow_id, shadow_ray) && shadow_id.material.emittance && glm::dot(shadow_id.normal, shadow_ray.direction) < 0)
+					{
+						L_local += shadow_id.material.color_diffuse * shadow_id.material.emittance * brdf * cos_angle * id.material.color_diffuse * 1 / glm::pow(glm::length(differance), 2);
+					}
+				}
+				L_local /= n_samples;
+
+				if (end_here)
+				{
+					return L_local;
+				}
+				else
+				{
+					SpectralDistribution L_indirect;
+					static const int n_samples = 1;
+					for (int i = 0; i < n_samples; ++i)
+					{
+						// helper is just a random vector and can not possibly be
+						// a zero vector since id.normal is normalized
+						glm::vec3 helper = id.normal + glm::vec3(1,1,1);
+						glm::vec3 tangent = glm::normalize(glm::cross(id.normal, helper));
+
+						float rand1 = (*dis_)(*gen_);
+						float rand2 = (*dis_)(*gen_);
+
+						// Uniform distribution
+						float inclination = glm::acos(1 - rand1);//glm::acos(1 -  2 * (*dis_)(*gen_));
+						float azimuth = 2 * M_PI * rand2;
+						// Change the actual vector
+						glm::vec3 random_direction = id.normal;
+						random_direction = glm::normalize(glm::rotate(
+							random_direction,
+							inclination,
+							tangent));
+						random_direction = glm::normalize(glm::rotate(
+							random_direction,
+							azimuth,
+							id.normal));
+
+						float brdf = 1 / (2 * M_PI); // Dependent on inclination and azimuth
+						float estimator = 1 / (2 * M_PI);
+
+						float cos_angle = glm::dot(random_direction, id.normal);
+
+						recursive_ray.direction = random_direction;
+						L_indirect += traceRay(recursive_ray, iteration + 1) * brdf * cos_angle / estimator * id.material.color_diffuse;
+					}
+					return L_indirect / n_samples + L_local;
+				}
+			}
+		}
+		else if (roll_refract && roll < roll_reflect + roll_refract)
+		{ // The ray is refracted (and reflected according to Fresnels equations)
+			if (iteration >= 5)
+				return SpectralDistribution();
 			glm::vec3 normal = inside ? -id.normal : id.normal;
 			glm::vec3 perfect_refraction = glm::refract(
 				r.direction,
 				normal,
 				r.material.refraction_index / id.material.refraction_index);
-			if (perfect_refraction == glm::vec3(0))
-			// Brewster angle reached, specular reflection
-			{
+			glm::vec3 perfect_reflection = glm::reflect(r.direction, id.normal);
+			if (perfect_refraction != glm::vec3(0))
+			{ // Refraction and reflection
+				// Schlicks approximation to Fresnels equations.
+				float n1 = r.material.refraction_index;
+				float n2 = id.material.refraction_index;
+				float R_0 = pow((n1 - n2)/(n1 + n2), 2);
+				float R = R_0 + (1 - R_0) * pow(1 - glm::dot(normal, -r.direction),5);
+
+				Ray recursive_ray_reflected = recursive_ray;
+				Ray recursive_ray_refracted = recursive_ray;
+
 				if (inside)
 				{
-					recursive_ray.position = r.position + id.t * r.direction -offset;
+					// Reflected ray
+					// Change the material the ray is travelling in
+					recursive_ray_reflected.material = id.material;
+					recursive_ray_reflected.position = r.position + id.t * r.direction -offset;
+					// Refracted ray
+					// Change the material the ray is travelling in
+					recursive_ray_refracted.material = *air_;
+					recursive_ray_refracted.position = r.position + id.t * r.direction +offset;
 				}
 				else
 				{
-					recursive_ray.position = r.position + id.t * r.direction +offset;
+					// Reflected ray
+					// Change the material the ray is travelling in
+					recursive_ray_reflected.material = *air_;
+					recursive_ray_reflected.position = r.position + id.t * r.direction +offset;
+					// Refracted ray
+					// Change the material the ray is travelling in
+					recursive_ray_refracted.material = id.material;
+					recursive_ray_refracted.position = r.position + id.t * r.direction -offset;
 				}
-				glm::vec3 perfect_reflection = glm::reflect(r.direction, normal);
+				SpectralDistribution to_return;
+				// Add some randomization to the direction vectors
+				recursive_ray_reflected.direction = shake(perfect_reflection, id.material.polish_power);
+				recursive_ray_refracted.direction = shake(perfect_refraction, id.material.clearness_power);
 
-				// Add some randomization to the direction vector
-				recursive_ray.direction = shake(perfect_reflection, id.material.polish_power);
-				// Recursively trace the reflected ray
-				sd += traceRay(recursive_ray) * id.material.color_specular;
+				// Recursively trace the refracted rays
+				SpectralDistribution reflected_part = traceRay(recursive_ray_reflected, iteration + 1) * id.material.color_specular * R;
+				SpectralDistribution refracted_part= traceRay(recursive_ray_refracted, iteration + 1) * (1 - R);
+				return reflected_part + refracted_part;
 			}
 			else
-			// Refraction
-			{
+			{ // Brewster angle reached, complete specular reflection
 				if (inside)
-				{
-					// Change the material the ray is travelling in
-					recursive_ray.material = *air_;
-					recursive_ray.position = r.position + id.t * r.direction +offset;
-					// Add some randomization to the direction vector
-					recursive_ray.direction = shake(perfect_refraction, id.material.clearness_power);
-					// Recursively trace the refracted ray
-					sd += traceRay(recursive_ray);
-				}
+					recursive_ray.position = r.position + id.t * r.direction - offset;
 				else
-				{
-					// Change the material the ray is travelling in
-					recursive_ray.material = id.material;
-					recursive_ray.position = r.position + id.t * r.direction -offset;
-					// Add some randomization to the direction vector
-					recursive_ray.direction = shake(perfect_refraction, id.material.clearness_power);
-					// Recursively trace the refracted ray
-					sd += traceRay(recursive_ray); 
-				}
-			}
-		}
-		if (reflective_importance && !inside)
-		// The ray is reflected out of the material
-		{
-			recursive_ray.position = r.position + id.t * r.direction +
-				(inside ? -offset : offset);
-
-			if (specular_importance)
-			// The ray will be reflected specularly
-			{
-				/*
-				if (end_here)
-				{
-					return sd;
-				}
-				*/
-				glm::vec3 perfect_reflection = glm::reflect(r.direction, id.normal);
+					recursive_ray.position = r.position + id.t * r.direction + offset;
 				// Add some randomization to the direction vector
 				recursive_ray.direction = shake(perfect_reflection, id.material.polish_power);
 				// Recursively trace the reflected ray
-				sd += traceRay(recursive_ray) * id.material.color_specular * specular_importance;
-			}
-			if(diffuse_importance)
-			// The ray will be reflected diffusely
-			{
-				if (inside)
-				{
-					sd[0] += 0;
-					sd[1] += 0;
-					sd[2] += 0;
-				} else
-				{
-					/*
-					SpectralDistribution local;
-					Ray shadow_ray;
-					shadow_ray.position = r.position + id.t * r.direction +
-						(inside ? -offset : offset);
-					glm::vec3 differance = glm::vec3(0,0.9,-4) - shadow_ray.position;
-					shadow_ray.direction = glm::normalize(differance);
-					shadow_ray.material = Material::air();
-					IntersectionData id_light;
-					if(intersect(&id_light, shadow_ray))
-					{
-						if(id_light.material.emittance)
-						{
-							local = id.material.color_diffuse * id_light.material.color_diffuse * id_light.material.emittance * glm::dot(id.normal, shadow_ray.direction) * 1 / glm::pow(glm::length(differance), 2);
-						}
-					}
-					*/
-					/*
-					if (end_here)
-					{
-						return local;
-					}
-					*/
-					
-					recursive_ray.direction = shake(id.normal, 1);
-					sd += traceRay(recursive_ray) * id.material.color_diffuse * diffuse_importance;
-					
-				}
+				return traceRay(recursive_ray, iteration + 1) * id.material.color_specular;
 			}
 		}
 	}
-	else
-	{
-		sd[0] = 0;
-		sd[1] = 0;
-		sd[2] = 0;
-	}
-	return sd;
+	return SpectralDistribution();
 }

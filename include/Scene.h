@@ -17,6 +17,7 @@ public:
 	virtual ~Object3D(){};
 
 	virtual bool intersect(IntersectionData* id, Ray r) = 0;
+	virtual glm::vec3 getPointOnSurface(float u, float v) = 0;
 	Material material(){return *material_;}
 };
 
@@ -30,6 +31,7 @@ public:
 	~Sphere(){};
 
 	bool intersect(IntersectionData* id, Ray r);
+	glm::vec3 getPointOnSurface(float u, float v);
 };
 
 class Plane : public Object3D
@@ -41,6 +43,7 @@ public:
 	~Plane(){};
 
 	bool intersect(IntersectionData* id, Ray r);
+	glm::vec3 getPointOnSurface(float u, float v);
 };
 
 class Scene
@@ -69,7 +72,7 @@ public:
 
 	bool intersect(IntersectionData* id, Ray r);
 	glm::vec3 shake(glm::vec3 r, float power);
-	SpectralDistribution traceRay(Ray r);
+	SpectralDistribution traceRay(Ray r, int iteration);
 };
 
 #endif // SCENE_H

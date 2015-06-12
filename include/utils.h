@@ -34,7 +34,8 @@ struct Material
 	SpectralDistribution color_diffuse;
 	SpectralDistribution color_specular;
 	float emittance; // [ 0 (non lightsource), inf]
-	float specular_reflectance; // [0 , 1]
+	float reflectance; // [0 , 1]
+	float specular_reflectance; // [0 , 1] part of reflectance
 	//float diffuse_reflectance; // [0 , 1]
 	float transmissivity; // [0 , 1]
 	float refraction_index; // [1 (air) , 2.4 (diamond)]
