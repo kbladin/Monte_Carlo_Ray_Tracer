@@ -38,14 +38,14 @@ const std::string currentDateTime() {
 int main(int argc, char const *argv[])
 {
   
-	static const int WIDTH = 160;
-	static const int HEIGHT = 120;
+	static const int WIDTH = 320;
+	static const int HEIGHT = 240;
 	// The camera is used to cast appropriate initial rays
 	Camera c(
 		glm::vec3(0, 0, -1), // Eye (position to look at)
 		glm::vec3(0, 0, 0), // Center (position of camera)
 		glm::vec3(0, 1, 0), // Up vector
-		M_PI / 4, // Field of view in radians
+		M_PI / 3, // Field of view in radians
 		WIDTH, // pixel width
 		HEIGHT); // pixel height
 
@@ -73,7 +73,7 @@ int main(int argc, char const *argv[])
 			int index = (x + y * c.width());
 			SpectralDistribution sd;
 
-			static const int SUB_SAMPLING = 5;
+			static const int SUB_SAMPLING = 1;
 
 			for (int i = 0; i < SUB_SAMPLING; ++i)
 			{

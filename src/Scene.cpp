@@ -3,141 +3,6 @@
 #include <iostream>
 #include <random>
 
-// --- Object3D class functions --- //
-
-Object3D::Object3D(Material* material) : 
-	material_(material)
-{}
-
-Material Object3D::material() const
-{
-	if (material_)
-	{
-		return *material_;
-	}
-	else
-	{
-		return Material();
-	}
-}
-
-// --- Sphere class functions --- //
-
-Sphere::Sphere(glm::vec3 position, float radius, Material* material) : 
-	Object3D(material), POSITION_(position), RADIUS_(radius)
-{}
-
-bool Sphere::intersect(IntersectionData* id, Ray r) const
-{
-	// if to_square is negative we have imaginary solutions,
-	// hence no intersection
-	// p_half comes from the p-q formula (p/2)
-	float p_half = glm::dot((r.position - POSITION_), r.direction);
-	float to_square = 
-		pow(p_half, 2) + 
-		pow(RADIUS_, 2) - 
-		pow(glm::length(r.position - POSITION_), 2);
-	float t; // parameter that tells us where on the ray the intersection is
-	glm::vec3 n; // normal of the intersection point on the surface
-	if (to_square < 0)
-	// No intersection points
-		return false;
-	else // if (to_square > 0) or (to_square == 0)
-	// One or two intersection points, if two intersection points,
-	// we choose the closest one that gives a positive t
-	{
-		t = -p_half - sqrt(to_square); // First the one on the front face
-		if (t < 0) // if we are inside the sphere
-		{
-			// the intersection is on the inside of the sphere
-			t = -p_half + sqrt(to_square);
-		}
-		n = r.position + t*r.direction - POSITION_;
-	}
-	if (t >= 0) // t needs to be positive to travel forward on the ray
-	{
-		id->t = t;
-		id->normal = glm::normalize(n);
-		id->material = material();
-		return true;
-	}
-	return false;
-}
-
-// --- Plane class functions --- //
-
-Plane::Plane(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, Material* material) : 
-	Object3D(material), P0_(p0), P1_(p1), P2_(p2)
-{}
-
-bool Plane::intersect(IntersectionData* id, Ray r) const
-{
-	glm::mat3 M;
-	M[0] = -r.direction;
-	M[1] = P1_ - P0_;
-	M[2] = P2_ - P0_;
-
-	glm::vec3 tuv = glm::inverse(M) * (r.position - P0_);
-
-	// To avoid confusion
-	// t is the parameter on the ray, u and v are parameters on the plane
-	float t = tuv.x;
-	float u = tuv.y;
-	float v = tuv.z;
-
-	if (u >= 0 && u <= 1 && v >= 0 && v <= 1 && // Within the boundary
-		t >= 0) // t needs to be positive to travel forward on the ray
-	{
-		glm::vec3 n = glm::cross(u * (P1_ - P0_), v * (P2_ - P0_));
-		id->t = t;
-		id->normal = glm::normalize(n);
-		id->material = material();
-		return true;
-	}
-	else
-		return false;
-}
-
-glm::vec3 Plane::getPointOnSurface(float u, float v) const
-{
-	glm::vec3 v1 = P1_ - P0_;
-	glm::vec3 v2 = P2_ - P0_;
-	return P0_ + u * v1 + v * v2;
-}
-
-// --- LightSource class functions --- //
-
-LightSource::LightSource(
-	glm::vec3 p0,
-	glm::vec3 p1,
-	glm::vec3 p2,
-	float emittance,
-	SpectralDistribution color) :
-	emitter_(p0, p1, p2, NULL),
-	emittance(emittance),
-	color(color)
-{}
-
-bool LightSource::intersect(LightSourceIntersectionData* light_id, Ray r)
-{
-	IntersectionData id;
-	if(emitter_.intersect(&id, r))
-	{
-		light_id->normal = id.normal;
-		light_id->t = id.t;
-		light_id->emittance = emittance;
-		light_id->color = color;
-		return true;
-	}
-	else
-		return false;
-}
-
-glm::vec3 LightSource::getPointOnSurface(float u, float v)
-{
-	return emitter_.getPointOnSurface(u, v);
-}
-
 // --- Scene class functions --- //
 
 Scene::Scene ()
@@ -161,7 +26,7 @@ Scene::Scene ()
 	mirror_->color_specular[1] = 1;
 	mirror_->color_specular[2] = 1;
 	mirror_->reflectance = 1;
-	mirror_->specular_reflectance = 0.5;
+	mirror_->specular_reflectance = 1;
 	mirror_->polish_power = 1000;
 
 	glass_->color_diffuse[0] = 0.5;
@@ -248,9 +113,10 @@ Scene::Scene ()
 		glm::vec3(1,-1,-5), // P2
 		diffuse_white_));
 
-	objects_.push_back(new Sphere(glm::vec3(0.5,-0.7,-4), 0.3, mirror_));
-	objects_.push_back(new Sphere(glm::vec3(-0.5,-0.5,-4), 0.3, glass_));
-	objects_.push_back(new Sphere(glm::vec3(0.2,0.2,-4.5), 0.2, diffuse_blue_));
+	//objects_.push_back(new Sphere(glm::vec3(0.5,-0.7,-4), 0.3, mirror_));
+	//objects_.push_back(new Sphere(glm::vec3(-0.5,-0.5,-4), 0.3, glass_));
+	//objects_.push_back(new Sphere(glm::vec3(0.2,0.2,-4.5), 0.2, diffuse_blue_));
+	objects_.push_back(new Mesh(diffuse_blue_));
 }
 
 Scene::~Scene()
@@ -387,7 +253,7 @@ SpectralDistribution Scene::traceRay(Ray r, int iteration)
 	}
 	else if (intersect(&id, r))
 	{
-		bool end_here = iteration >= 1;
+		bool end_here = iteration >= 0;
 		Ray recursive_ray = r;
 		// To make sure it does not intersect with itself again
 		glm::vec3 offset = id.normal * 0.000001f;
