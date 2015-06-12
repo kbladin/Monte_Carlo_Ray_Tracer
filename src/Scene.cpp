@@ -9,18 +9,25 @@ Object3D::Object3D(Material* material) :
 	material_(material)
 {}
 
+Material Object3D::material() const
+{
+	if (material_)
+	{
+		return *material_;
+	}
+	else
+	{
+		return Material();
+	}
+}
+
 // --- Sphere class functions --- //
 
 Sphere::Sphere(glm::vec3 position, float radius, Material* material) : 
 	Object3D(material), POSITION_(position), RADIUS_(radius)
 {}
 
-glm::vec3 Sphere::getPointOnSurface(float u, float v)
-{
-	return glm::vec3();
-}
-
-bool Sphere::intersect(IntersectionData* id, Ray r)
+bool Sphere::intersect(IntersectionData* id, Ray r) const
 {
 	// if to_square is negative we have imaginary solutions,
 	// hence no intersection
@@ -63,7 +70,7 @@ Plane::Plane(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, Material* material) :
 	Object3D(material), P0_(p0), P1_(p1), P2_(p2)
 {}
 
-bool Plane::intersect(IntersectionData* id, Ray r)
+bool Plane::intersect(IntersectionData* id, Ray r) const
 {
 	glm::mat3 M;
 	M[0] = -r.direction;
@@ -91,11 +98,44 @@ bool Plane::intersect(IntersectionData* id, Ray r)
 		return false;
 }
 
-glm::vec3 Plane::getPointOnSurface(float u, float v)
+glm::vec3 Plane::getPointOnSurface(float u, float v) const
 {
 	glm::vec3 v1 = P1_ - P0_;
 	glm::vec3 v2 = P2_ - P0_;
 	return P0_ + u * v1 + v * v2;
+}
+
+// --- LightSource class functions --- //
+
+LightSource::LightSource(
+	glm::vec3 p0,
+	glm::vec3 p1,
+	glm::vec3 p2,
+	float emittance,
+	SpectralDistribution color) :
+	emitter_(p0, p1, p2, NULL),
+	emittance(emittance),
+	color(color)
+{}
+
+bool LightSource::intersect(LightSourceIntersectionData* light_id, Ray r)
+{
+	IntersectionData id;
+	if(emitter_.intersect(&id, r))
+	{
+		light_id->normal = id.normal;
+		light_id->t = id.t;
+		light_id->emittance = emittance;
+		light_id->color = color;
+		return true;
+	}
+	else
+		return false;
+}
+
+glm::vec3 LightSource::getPointOnSurface(float u, float v)
+{
+	return emitter_.getPointOnSurface(u, v);
 }
 
 // --- Scene class functions --- //
@@ -113,16 +153,15 @@ Scene::Scene ()
 	diffuse_white_ = new Material();
 	diffuse_gray_ = new Material();
 	air_ = new Material();
-	lamp_ = new Material();
 
-	mirror_->color_diffuse[0] = 0;
-	mirror_->color_diffuse[1] = 0;
-	mirror_->color_diffuse[2] = 0;
+	mirror_->color_diffuse[0] = 0.2;
+	mirror_->color_diffuse[1] = 1;
+	mirror_->color_diffuse[2] = 0.2;
 	mirror_->color_specular[0] = 1;
 	mirror_->color_specular[1] = 1;
 	mirror_->color_specular[2] = 1;
 	mirror_->reflectance = 1;
-	mirror_->specular_reflectance = 1;
+	mirror_->specular_reflectance = 0.5;
 	mirror_->polish_power = 1000;
 
 	glass_->color_diffuse[0] = 0.5;
@@ -139,13 +178,6 @@ Scene::Scene ()
 	glass_->polish_power = 1000;
 
 	*air_ = Material::air();
-
-	lamp_->color_diffuse[0] = 1;
-	lamp_->color_diffuse[1] = 1;
-	lamp_->color_diffuse[2] = 1;
-	lamp_->reflectance = 1;
-
-	lamp_->emittance = 3;
 
 	diffuse_red_->color_diffuse[0] = 1;
 	diffuse_red_->color_diffuse[1] = 0.2;
@@ -172,6 +204,19 @@ Scene::Scene ()
 	diffuse_gray_->color_diffuse[2] = 0.5;
 	diffuse_gray_->reflectance = 1;
 	
+
+	SpectralDistribution lamp_color;
+	lamp_color[0] = 1;
+	lamp_color[1] = 1;
+	lamp_color[2] = 1;
+	float lamp_size = 0.6;
+	lamps_.push_back(new LightSource(
+		glm::vec3(-lamp_size / 2,1 - 0.01,-5 + (1 - lamp_size / 2)), // P0
+		glm::vec3(lamp_size / 2,1 - 0.01,-5 + (1 - lamp_size / 2)), // P1
+		glm::vec3(-lamp_size / 2,1 - 0.01,-5 + (1 + lamp_size / 2)), // P2
+		3, // Emittance
+		lamp_color));
+
 	// Back
 	objects_.push_back(new Plane(
 		glm::vec3(-1,-1,-5), // P0
@@ -206,12 +251,6 @@ Scene::Scene ()
 	objects_.push_back(new Sphere(glm::vec3(0.5,-0.7,-4), 0.3, mirror_));
 	objects_.push_back(new Sphere(glm::vec3(-0.5,-0.5,-4), 0.3, glass_));
 	objects_.push_back(new Sphere(glm::vec3(0.2,0.2,-4.5), 0.2, diffuse_blue_));
-	float size = 0.3;
-	objects_.push_back(new Plane(
-		glm::vec3(-size,1 - 0.01,-5 + (1 - size)), // P0
-		glm::vec3(size,1 - 0.01,-5 + (1 - size)), // P1
-		glm::vec3(-size,1 - 0.01,-5 + (1 + size)), // P2
-		lamp_));
 }
 
 Scene::~Scene()
@@ -223,6 +262,11 @@ Scene::~Scene()
 	{
 		delete objects_[i];
 	}
+	for (int i = 0; i < lamps_.size(); ++i)
+	{
+		delete lamps_[i];
+	}
+
 	delete mirror_;
 	delete glass_;
 	delete diffuse_red_;
@@ -231,7 +275,6 @@ Scene::~Scene()
 	delete diffuse_white_;
 	delete diffuse_gray_;
 	delete air_;
-	delete lamp_;
 }
 
 bool Scene::intersect(IntersectionData* id, Ray r)
@@ -253,6 +296,49 @@ bool Scene::intersect(IntersectionData* id, Ray r)
 	{
 		*id = id_smallest_t;
 		return true;
+	}
+	return false;
+}
+
+bool Scene::intersectLamp(LightSourceIntersectionData* light_id, Ray r)
+{
+	LightSourceIntersectionData lamp_id_smallest_t;
+	lamp_id_smallest_t.t = 100000; // Ugly solution
+
+	LightSource* intersecting_lamp = NULL;
+	for (int i = 0; i < lamps_.size(); ++i)
+	{
+		LightSourceIntersectionData id_local;
+		if (lamps_[i]->intersect(&id_local,r) && id_local.t < lamp_id_smallest_t.t)
+		{
+			lamp_id_smallest_t = id_local;
+			intersecting_lamp = lamps_[i];
+		}
+	}
+	if (intersecting_lamp)
+	{
+		IntersectionData id_smallest_t;
+		id_smallest_t.t = 100000; // Ugly solution
+
+		Object3D* intersecting_object = NULL;
+		for (int i = 0; i < objects_.size(); ++i)
+		{
+			IntersectionData id_local;
+			if (objects_[i]->intersect(&id_local,r) && id_local.t < id_smallest_t.t)
+			{
+				id_smallest_t = id_local;
+				intersecting_object = objects_[i];
+			}
+		}
+		if (intersecting_object && id_smallest_t.t < lamp_id_smallest_t.t)
+		{
+			return false;
+		}
+		else
+		{
+			*light_id = lamp_id_smallest_t;
+			return true;	
+		}
 	}
 	return false;
 }
@@ -293,19 +379,18 @@ glm::vec3 Scene::shake(glm::vec3 r, float power)
 
 SpectralDistribution Scene::traceRay(Ray r, int iteration)
 {
-	//SpectralDistribution sd;
 	IntersectionData id;
-	if (intersect(&id, r))
+	LightSourceIntersectionData lamp_id;
+	if (intersectLamp(&lamp_id, r))
 	{
-		if (id.material.emittance)
-		{
-			return id.material.color_diffuse * id.material.emittance;
-		}
-
+		return lamp_id.color * lamp_id.emittance;
+	}
+	else if (intersect(&id, r))
+	{
 		bool end_here = iteration >= 1;
 		Ray recursive_ray = r;
 		// To make sure it does not intersect with itself again
-		glm::vec3 offset = id.normal * 0.00001f;
+		glm::vec3 offset = id.normal * 0.000001f;
 		bool inside = false;
 		if (glm::dot(id.normal, r.direction) > 0)
 		// The ray is inside an object
@@ -340,24 +425,26 @@ SpectralDistribution Scene::traceRay(Ray r, int iteration)
 				SpectralDistribution L_local;
 				// Cast shadow rays
 				static const int n_samples = 10;
-				for (int i = 0; i < n_samples; ++i)
+				for (int i = 0; i < lamps_.size(); ++i)
 				{
-					Ray shadow_ray = recursive_ray;
-					glm::vec3 differance = objects_[8]->getPointOnSurface((*dis_)(*gen_),(*dis_)(*gen_)) - shadow_ray.position;
-					shadow_ray.direction = glm::normalize(differance);
-
-					float brdf = 1 / (2 * M_PI); // Dependent on inclination and azimuth
-					float cos_angle = glm::dot(shadow_ray.direction, id.normal);
-
-					IntersectionData shadow_id;
-
-					if(intersect(&shadow_id, shadow_ray) && shadow_id.material.emittance && glm::dot(shadow_id.normal, shadow_ray.direction) < 0)
+					for (int j = 0; j < n_samples; ++j)
 					{
-						L_local += shadow_id.material.color_diffuse * shadow_id.material.emittance * brdf * cos_angle * id.material.color_diffuse * 1 / glm::pow(glm::length(differance), 2);
+						Ray shadow_ray = recursive_ray;
+						glm::vec3 differance = lamps_[i]->getPointOnSurface((*dis_)(*gen_),(*dis_)(*gen_)) - shadow_ray.position;
+						shadow_ray.direction = glm::normalize(differance);
+
+						float brdf = 1 / (2 * M_PI); // Dependent on inclination and azimuth
+						float cos_angle = glm::dot(shadow_ray.direction, id.normal);
+
+						LightSourceIntersectionData shadow_id;
+
+						if(intersectLamp(&shadow_id, shadow_ray) && glm::dot(shadow_id.normal, shadow_ray.direction) < 0)
+						{
+							L_local += shadow_id.color * shadow_id.emittance * brdf * cos_angle * id.material.color_diffuse * 1 / glm::pow(glm::length(differance), 2);
+						}
 					}
 				}
 				L_local /= n_samples;
-
 				if (end_here)
 				{
 					return L_local;

@@ -16,9 +16,8 @@ public:
 	Object3D(Material* material);
 	virtual ~Object3D(){};
 
-	virtual bool intersect(IntersectionData* id, Ray r) = 0;
-	virtual glm::vec3 getPointOnSurface(float u, float v) = 0;
-	Material material(){return *material_;}
+	virtual bool intersect(IntersectionData* id, Ray r) const = 0;
+	Material material() const;
 };
 
 class Sphere : public Object3D
@@ -30,8 +29,7 @@ public:
 	Sphere(glm::vec3 position, float radius, Material* material);
 	~Sphere(){};
 
-	bool intersect(IntersectionData* id, Ray r);
-	glm::vec3 getPointOnSurface(float u, float v);
+	bool intersect(IntersectionData* id, Ray r) const;
 };
 
 class Plane : public Object3D
@@ -42,19 +40,39 @@ public:
 	Plane(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, Material* material);
 	~Plane(){};
 
-	bool intersect(IntersectionData* id, Ray r);
+	bool intersect(IntersectionData* id, Ray r) const;
+	glm::vec3 getPointOnSurface(float u, float v) const;
+};
+
+class LightSource
+{
+private:
+	const Plane emitter_;
+public:
+	LightSource(
+		glm::vec3 p0,
+		glm::vec3 p1,
+		glm::vec3 p2,
+		float emittance,
+		SpectralDistribution color);
+	~LightSource(){};
+	bool intersect(LightSourceIntersectionData* light_id, Ray r);
 	glm::vec3 getPointOnSurface(float u, float v);
+
+
+	const float emittance;
+	const SpectralDistribution color;
 };
 
 class Scene
 {
 private:
 	std::vector<Object3D*> objects_;
+	std::vector<LightSource*> lamps_;
 
 	Material* mirror_;
 	Material* glass_;
 	Material* air_;
-	Material* lamp_;
 
 	Material* diffuse_red_;
 	Material* diffuse_green_;
@@ -71,6 +89,7 @@ public:
 	~Scene();
 
 	bool intersect(IntersectionData* id, Ray r);
+	bool intersectLamp(LightSourceIntersectionData* light_id, Ray r);
 	glm::vec3 shake(glm::vec3 r, float power);
 	SpectralDistribution traceRay(Ray r, int iteration);
 };
