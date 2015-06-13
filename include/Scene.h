@@ -22,6 +22,7 @@ private:
 	Material* diffuse_red_;
 	Material* diffuse_green_;
 	Material* diffuse_blue_;
+	Material* diffuse_cyan_;
 	Material* diffuse_white_;
 	Material* diffuse_gray_;
 

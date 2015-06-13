@@ -15,6 +15,7 @@ Scene::Scene ()
 	diffuse_red_ = new Material();
 	diffuse_green_ = new Material();
 	diffuse_blue_ = new Material();
+	diffuse_cyan_ = new Material();
 	diffuse_white_ = new Material();
 	diffuse_gray_ = new Material();
 	air_ = new Material();
@@ -58,6 +59,11 @@ Scene::Scene ()
 	diffuse_blue_->color_diffuse[1] = 0.6;
 	diffuse_blue_->color_diffuse[2] = 1;
 	diffuse_blue_->reflectance = 1;
+
+	diffuse_cyan_->color_diffuse[0] = 0.6;
+	diffuse_cyan_->color_diffuse[1] = 1;
+	diffuse_cyan_->color_diffuse[2] = 1;
+	diffuse_cyan_->reflectance = 1;
 
 	diffuse_white_->color_diffuse[0] = 1;
 	diffuse_white_->color_diffuse[1] = 1;
@@ -116,7 +122,7 @@ Scene::Scene ()
 	objects_.push_back(new Sphere(glm::vec3(0.8,-0.7,0.7), 0.3, mirror_));
 	objects_.push_back(new Sphere(glm::vec3(-0.8,-0.2,0.5), 0.3, glass_));
 	objects_.push_back(new Sphere(glm::vec3(0.9,0.3,-0), 0.2, diffuse_blue_));
-	objects_.push_back(new Mesh(diffuse_white_));
+	objects_.push_back(new Mesh(diffuse_cyan_));
 }
 
 Scene::~Scene()
@@ -138,6 +144,7 @@ Scene::~Scene()
 	delete diffuse_red_;
 	delete diffuse_green_;
 	delete diffuse_blue_;
+	delete diffuse_cyan_;
 	delete diffuse_white_;
 	delete diffuse_gray_;
 	delete air_;

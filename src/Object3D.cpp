@@ -73,8 +73,8 @@ Mesh::Mesh(Material * material) :
 	Object3D(material)
 {
 	transform_ = glm::scale(glm::mat4(), glm::vec3(0.3f,0.3f,0.3f));
-	transform_ = glm::orientation(glm::vec3(0.7,-0.2,-0.3), glm::vec3(0,1,0)) * transform_;
-	transform_ = glm::translate(glm::mat4(), glm::vec3(0.0f,0.0f,0.3f)) * transform_;
+	transform_ = glm::orientation(glm::vec3(0.7,-0.3,-0.3), glm::vec3(0,1,0)) * transform_;
+	transform_ = glm::translate(glm::mat4(), glm::vec3(0.0f,-0.4f,0.3f)) * transform_;
 
 	loadOBJ("cube.obj", positions_, uvs_, normals_);
 

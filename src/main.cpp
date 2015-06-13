@@ -37,7 +37,10 @@ const std::string currentDateTime() {
 
 int main(int argc, char const *argv[])
 {
-  
+ 	//#pragma omp parallel
+	//printf("Hello from thread %d, nthreads %d\n", omp_get_thread_num(), omp_get_num_threads());
+
+
 	static const int WIDTH = 800 / 4;
 	static const int HEIGHT = 600 / 4;
 	// The camera is used to cast appropriate initial rays
@@ -73,7 +76,7 @@ int main(int argc, char const *argv[])
 			int index = (x + y * c.width());
 			SpectralDistribution sd;
 
-			static const int SUB_SAMPLING = 10;
+			static const int SUB_SAMPLING = 40;
 
 			for (int i = 0; i < SUB_SAMPLING; ++i)
 			{
