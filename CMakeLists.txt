@@ -1,22 +1,24 @@
 cmake_minimum_required(VERSION 2.8)
 
+SET(CMAKE_C_COMPILER gcc-5)
+SET(CMAKE_CXX_COMPILER g++-5)
+
 # Create project
 SET(PROJECT_NAME global_illumination)
 project(${PROJECT_NAME})
-
-#SET(CMAKE_C_COMPILER gcc)
-#SET(CMAKE_CXX_COMPILER g++)
 
 # Add the external module path
 # set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake/Modules)
 
 #find_package(OPENMP REQUIRED)
 
-#find_package(OpenMP)
-#if (OPENMP_FOUND)
-#    set (CMAKE_C_FLAGS ${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS})
-#    set (CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS})
-#endif()
+FIND_PACKAGE( OpenMP )
+if(OPENMP_FOUND)
+	message("OPENMP FOUND")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+endif()
 
 # Add external libraries
 # GLM (only include, no source needed)

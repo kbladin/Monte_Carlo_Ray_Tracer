@@ -4,7 +4,7 @@
 #include <time.h>
 
 #include <glm/glm.hpp>
-//#include <libiomp/omp.h>
+#include <libiomp/omp.h>
 
 #include "../include/Camera.h"
 #include "../include/Scene.h"
@@ -37,10 +37,6 @@ const std::string currentDateTime() {
 
 int main(int argc, char const *argv[])
 {
- 	//#pragma omp parallel
-	//printf("Hello from thread %d, nthreads %d\n", omp_get_thread_num(), omp_get_num_threads());
-
-
 	static const int WIDTH = 800 / 4;
 	static const int HEIGHT = 600 / 4;
 	// The camera is used to cast appropriate initial rays
@@ -63,20 +59,22 @@ int main(int argc, char const *argv[])
 	time_t time_start, time_now;
 	time(&time_start);
 
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::uniform_real_distribution<float> dis(-0.5, 0.5);
+
 	// Loop through all pixels to calculate their intensities by ray-tracing
 	// This loop could and should be parallellized.
 	for (int x = 0; x < WIDTH; ++x)
 	{
+		#pragma omp parallel for
 		for (int y = 0; y < HEIGHT; ++y)
 		{
-			std::random_device rd;
-			std::mt19937 gen(rd());
-			std::uniform_real_distribution<float> dis(-0.5, 0.5);
 
 			int index = (x + y * c.width());
 			SpectralDistribution sd;
 
-			static const int SUB_SAMPLING = 40;
+			static const int SUB_SAMPLING = 50;
 
 			for (int i = 0; i < SUB_SAMPLING; ++i)
 			{
