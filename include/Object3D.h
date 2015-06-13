@@ -5,6 +5,15 @@
 #include <glm/glm.hpp>
 #include "utils.h"
 
+struct AABB
+{
+	glm::vec3 min;
+	glm::vec3 max;
+	glm::mat4 transform;
+
+	bool intersect(Ray r) const;
+};
+
 class Object3D
 {
 private:
@@ -23,20 +32,23 @@ private:
 	std::vector<glm::vec3> positions_;
 	std::vector<glm::vec2> uvs_;
 	std::vector<glm::vec3> normals_;
-	std::vector<int> indices_;
 
 	glm::mat4 transform_;
+
+	AABB aabb_;
 public:
 	Mesh(Material * material);
-	static bool loadOBJ(
+	~Mesh(){};
+
+	virtual bool intersect(IntersectionData* id, Ray r) const;
+ 	static bool loadOBJ(
 		const char * path, 
 		std::vector<glm::vec3> & out_vertices, 
 		std::vector<glm::vec2> & out_uvs,
 		std::vector<glm::vec3> & out_normals
 	);
-	~Mesh(){};
-
-	virtual bool intersect(IntersectionData* id, Ray r) const;
+	glm::vec3 getMinPosition();
+	glm::vec3 getMaxPosition();
 };
 
 class Sphere : public Object3D

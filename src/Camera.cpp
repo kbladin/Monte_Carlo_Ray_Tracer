@@ -57,7 +57,7 @@ Ray Camera::castRay(
 			P,
 			glm::vec4(0, 0, WIDTH_, HEIGHT_));
 		glm::vec3 to = glm::unProject(
-			glm::vec3(pixel_x + parameter_x, pixel_y + parameter_y, -1.0f),
+			glm::vec3(pixel_x + parameter_x, pixel_y + parameter_y, 1.0f),
 			V,
 			P,
 			glm::vec4(0, 0, WIDTH_, HEIGHT_));

@@ -42,8 +42,8 @@ int main(int argc, char const *argv[])
 	static const int HEIGHT = 240;
 	// The camera is used to cast appropriate initial rays
 	Camera c(
-		glm::vec3(0, 0, -1), // Eye (position to look at)
-		glm::vec3(0, 0, 0), // Center (position of camera)
+		glm::vec3(0, 0, -1), // Eye (position of camera)
+		glm::vec3(0, 0, -5), // Center (position to look at)
 		glm::vec3(0, 1, 0), // Up vector
 		M_PI / 3, // Field of view in radians
 		WIDTH, // pixel width
@@ -81,7 +81,7 @@ int main(int argc, char const *argv[])
 			// Trying to cast a ray
 			Ray r = c.castRay(
 				x, // Pixel x 
-				y, // Pixel y 
+				(HEIGHT - y), // Pixel y 
 				dis(gen), // Parameter x (>= -0.5 and < 0.5), for subsampling
 				dis(gen)); // Parameter y (>= -0.5 and < 0.5), for subsampling
 			sd += s.traceRay(r, 0);

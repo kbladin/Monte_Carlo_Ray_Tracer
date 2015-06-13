@@ -5,6 +5,50 @@
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
 
+// --- AABB class functions --- //
+
+bool AABB::intersect(Ray r) const
+{
+	glm::vec3 origin =
+		glm::vec3(glm::inverse(transform) *
+		glm::vec4(r.position, 1));
+	glm::vec3 direction =
+		glm::vec3(glm::inverse(transform) *
+		glm::vec4(r.direction, 0));
+
+	// r.dir is unit direction vector of ray
+	glm::vec3 dirfrac(1.0f / direction.x, 1.0f / direction.y, 1.0f / direction.z);
+	// lb is the corner of AABB with minimal coordinates - left bottom, rt is maximal corner
+	// r.org is origin of ray
+	float t1 = (min.x - origin.x)*dirfrac.x;
+	float t2 = (max.x - origin.x)*dirfrac.x;
+	float t3 = (min.y - origin.y)*dirfrac.y;
+	float t4 = (max.y - origin.y)*dirfrac.y;
+	float t5 = (min.z - origin.z)*dirfrac.z;
+	float t6 = (max.z - origin.z)*dirfrac.z;
+
+	float tmin = glm::max(glm::max(glm::min(t1, t2), glm::min(t3, t4)), glm::min(t5, t6));
+	float tmax = glm::min(glm::min(glm::max(t1, t2), glm::max(t3, t4)), glm::max(t5, t6));
+
+	// if tmax < 0, ray (line) is intersecting AABB, but whole AABB is behing us
+	if (tmax < 0)
+	{
+	    //*t = tmax;
+	    return false;
+	}
+
+	// if tmin > tmax, ray doesn't intersect AABB
+	if (tmin > tmax)
+	{
+	    //*t = tmax;
+	    return false;
+	}
+
+	//*t = tmin;
+	return true;
+	return false;
+}
+
 // --- Object3D class functions --- //
 
 Object3D::Object3D(Material* material) : 
@@ -28,32 +72,25 @@ Material Object3D::material() const
 Mesh::Mesh(Material * material) :
 	Object3D(material)
 {
-	/*
-	positions_.push_back(glm::vec3(0.5,0,-4));
-	positions_.push_back(glm::vec3(0.8,0,-2));
-	positions_.push_back(glm::vec3(0.5,0.3,-4));
-
-	normals_.push_back(glm::vec3(0,0,1));
-	normals_.push_back(glm::vec3(0,0,1));
-	normals_.push_back(glm::vec3(0,0,1));
-
-	indices_.push_back(0);
-	indices_.push_back(1);
-	indices_.push_back(2);
-	*/
-
-	transform_ = glm::scale(glm::mat4(), glm::vec3(0.2f,0.2f,0.2f));
-	transform_ = glm::orientation(glm::vec3(0.3,0.5,-0.7), glm::vec3(0,1,0)) * transform_;
-	transform_ = glm::translate(glm::mat4(), glm::vec3(0.4f,0.0f,-4.0f)) * transform_;
+	transform_ = glm::scale(glm::mat4(), glm::vec3(0.4f,0.4f,0.4f));
+	transform_ = glm::orientation(glm::vec3(0.7,-0.2,-0.3), glm::vec3(0,1,0)) * transform_;
+	transform_ = glm::translate(glm::mat4(), glm::vec3(0.5f,0.0f,-4.0f)) * transform_;
 
 	loadOBJ("cube.obj", positions_, uvs_, normals_);
 
-	std::cout << indices_.size() << std::endl;
-
+	aabb_.min = getMinPosition();
+	aabb_.max = getMaxPosition();
+	aabb_.transform = transform_;
 }
 
 bool Mesh::intersect(IntersectionData* id, Ray r) const
 {
+	if (!aabb_.intersect(r))
+	{
+		return false;
+	}
+	float t_smallest = 10000000;
+	bool intersect = false;
 	for (int i = 0; i < positions_.size(); i=i+3)
 	{
 		glm::vec3 p0 = glm::vec3(transform_ * glm::vec4(positions_[i + 0], 1));
@@ -76,8 +113,10 @@ bool Mesh::intersect(IntersectionData* id, Ray r) const
 		float v = tuv.z;
 
 		if (u >= 0 && v >= 0 && u + v <= 1 && // Within the boundary
-			t >= 0) // t needs to be positive to travel forward on the ray
+			t >= 0 && // t needs to be positive to travel forward on the ray
+			t < t_smallest)
 		{
+			t_smallest = t;
 			glm::vec3 n0 = glm::vec3(transform_ * glm::vec4(normals_[i + 0], 0));
 			glm::vec3 n1 = glm::vec3(transform_ * glm::vec4(normals_[i + 1], 0));
 			glm::vec3 n2 = glm::vec3(transform_ * glm::vec4(normals_[i + 2], 0));
@@ -87,48 +126,10 @@ bool Mesh::intersect(IntersectionData* id, Ray r) const
 			id->t = t;
 			id->normal = glm::normalize(n);
 			id->material = material();
-			return true;
+			intersect = true;
 		}
 	}
-	return false;
-	/*
-	for (int i = 0; i < indices_.size(); i=i+3)
-	{
-		glm::vec3 p0 = glm::vec3(transform_ * glm::vec4(positions_[indices_[i + 0]], 1));
-		glm::vec3 p1 = glm::vec3(transform_ * glm::vec4(positions_[indices_[i + 1]], 1));
-		glm::vec3 p2 = glm::vec3(transform_ * glm::vec4(positions_[indices_[i + 2]], 1));
-		glm::vec3 n0 = glm::vec3(transform_ * glm::vec4(normals_[indices_[i + 0]], 0));
-		glm::vec3 n1 = glm::vec3(transform_ * glm::vec4(normals_[indices_[i + 1]], 0));
-		glm::vec3 n2 = glm::vec3(transform_ * glm::vec4(normals_[indices_[i + 2]], 0));
-
-		glm::mat3 M;
-		M[0] = -r.direction;
-		M[1] = p1 - p0;
-		M[2] = p2 - p0;
-
-		glm::vec3 tuv =
-			glm::inverse(M) *
-			(r.position - p0);
-
-		// To avoid confusion
-		// t is the parameter on the ray, u and v are parameters on the plane
-		float t = tuv.x;
-		float u = tuv.y;
-		float v = tuv.z;
-
-		if (u >= 0 && v >= 0 && u + v <= 1 && // Within the boundary
-			t >= 0) // t needs to be positive to travel forward on the ray
-		{
-			// Interpolate to find normal
-			glm::vec3 n = (1 - u - v) * n0 + u * n1 + v * n2;
-			id->t = t;
-			id->normal = glm::normalize(n);
-			id->material = material();
-			return true;
-		}
-	}
-	return false;
-	*/
+	return intersect;
 }
 
 // This function is taken from www.opengl-tutorial.org
@@ -222,6 +223,32 @@ bool Mesh::loadOBJ(
 	}
 
 	return true;
+}
+
+glm::vec3 Mesh::getMinPosition()
+{
+	glm::vec3 min = positions_[0];
+	for (int i = 1; i < positions_.size(); ++i)
+	{
+		glm::vec3 p = positions_[i];
+		min.x = p.x < min.x ? p.x : min.x;
+		min.y = p.y < min.y ? p.y : min.y;
+		min.z = p.z < min.z ? p.z : min.z;
+	}
+	return min;
+}
+
+glm::vec3 Mesh::getMaxPosition()
+{
+	glm::vec3 max = positions_[0];
+	for (int i = 1; i < positions_.size(); ++i)
+	{
+		glm::vec3 p = positions_[i];
+		max.x = p.x > max.x ? p.x : max.x;
+		max.y = p.y > max.y ? p.y : max.y;
+		max.z = p.z > max.z ? p.z : max.z;
+	}
+	return max;
 }
 
 // --- Sphere class functions --- //
