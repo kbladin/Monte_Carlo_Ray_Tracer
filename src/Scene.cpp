@@ -54,8 +54,8 @@ Scene::Scene ()
 	diffuse_green_->color_diffuse[2] = 0.2;
 	diffuse_green_->reflectance = 1;
 
-	diffuse_blue_->color_diffuse[0] = 0.2;
-	diffuse_blue_->color_diffuse[1] = 0.2;
+	diffuse_blue_->color_diffuse[0] = 0.6;
+	diffuse_blue_->color_diffuse[1] = 0.6;
 	diffuse_blue_->color_diffuse[2] = 1;
 	diffuse_blue_->reflectance = 1;
 
@@ -76,47 +76,47 @@ Scene::Scene ()
 	lamp_color[2] = 1;
 	float lamp_size = 0.6;
 	lamps_.push_back(new LightSource(
-		glm::vec3(-lamp_size / 2,1 - 0.0001,-4.5 + (1 - lamp_size / 2)), // P0
-		glm::vec3(lamp_size / 2,1 - 0.0001,-4.5 + (1 - lamp_size / 2)), // P1
-		glm::vec3(-lamp_size / 2,1 - 0.0001,-4.5 + (1 + lamp_size / 2)), // P2
+		glm::vec3(-lamp_size / 2,1 - 0.0001,(1 - lamp_size / 2)), // P0
+		glm::vec3(lamp_size / 2,1 - 0.0001,(1 - lamp_size / 2)), // P1
+		glm::vec3(-lamp_size / 2,1 - 0.0001,(1 + lamp_size / 2)), // P2
 		2, // Emittance
 		lamp_color));
 
 	// Back
 	objects_.push_back(new Plane(
-		glm::vec3(-1.5,-1,-5), // P0
-		glm::vec3(1.5,-1,-5), // P1
-		glm::vec3(-1.5,1,-5), // P2
+		glm::vec3(-1.5,-1,-1), // P0
+		glm::vec3(1.5,-1,-1), // P1
+		glm::vec3(-1.5,1,-1), // P2
 		diffuse_white_));
 	// Left
 	objects_.push_back(new Plane(
-		glm::vec3(-1.5,-1,-5), // P0
-		glm::vec3(-1.5,1,-5), // P1
-		glm::vec3(-1.5,-1,-0), // P2
+		glm::vec3(-1.5,-1,-1), // P0
+		glm::vec3(-1.5,1,-1), // P1
+		glm::vec3(-1.5,-1,4), // P2
 		diffuse_red_));
 	// Right
 	objects_.push_back(new Plane(
-		glm::vec3(1.5,-1,-5), // P0
-		glm::vec3(1.5,-1,-0), // P1
-		glm::vec3(1.5,1,-5), // P2
+		glm::vec3(1.5,-1,-1), // P0
+		glm::vec3(1.5,-1,4), // P1
+		glm::vec3(1.5,1,-1), // P2
 		diffuse_green_));
 	// Roof
 	objects_.push_back(new Plane(
-		glm::vec3(-1.5,1,-5), // P0
-		glm::vec3(1.5,1,-5), // P1
-		glm::vec3(-1.5,1,-0), // P2
+		glm::vec3(-1.5,1,-1), // P0
+		glm::vec3(1.5,1,-1), // P1
+		glm::vec3(-1.5,1,4), // P2
 		diffuse_white_));
 	// Floor
 	objects_.push_back(new Plane(
-		glm::vec3(-1.5,-1,-5), // P0
-		glm::vec3(-1.5,-1,-0), // P1
-		glm::vec3(1.5,-1,-5), // P2
+		glm::vec3(-1.5,-1,-1), // P0
+		glm::vec3(-1.5,-1,4), // P1
+		glm::vec3(1.5,-1,-1), // P2
 		diffuse_white_));
 
-	objects_.push_back(new Sphere(glm::vec3(0.7,-0.7,-3.5), 0.3, mirror_));
-	objects_.push_back(new Sphere(glm::vec3(-0.7,-0.5,-3.5), 0.3, glass_));
-	objects_.push_back(new Sphere(glm::vec3(0.4,0.2,-4.5), 0.2, diffuse_blue_));
-	//objects_.push_back(new Mesh(glass_));
+	objects_.push_back(new Sphere(glm::vec3(0.8,-0.7,0.7), 0.3, mirror_));
+	objects_.push_back(new Sphere(glm::vec3(-0.8,-0.2,0.5), 0.3, glass_));
+	objects_.push_back(new Sphere(glm::vec3(0.9,0.3,-0), 0.2, diffuse_blue_));
+	objects_.push_back(new Mesh(diffuse_white_));
 }
 
 Scene::~Scene()
@@ -253,7 +253,7 @@ SpectralDistribution Scene::traceRay(Ray r, int iteration)
 	}
 	else if (intersect(&id, r))
 	{
-		bool end_here = iteration >= 1;
+		bool end_here = iteration >= 2;
 		Ray recursive_ray = r;
 		// To make sure it does not intersect with itself again
 		glm::vec3 offset = id.normal * 0.000001f;

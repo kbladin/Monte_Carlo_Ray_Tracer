@@ -38,12 +38,12 @@ const std::string currentDateTime() {
 int main(int argc, char const *argv[])
 {
   
-	static const int WIDTH = 320;
-	static const int HEIGHT = 240;
+	static const int WIDTH = 800 / 4;
+	static const int HEIGHT = 600 / 4;
 	// The camera is used to cast appropriate initial rays
 	Camera c(
-		glm::vec3(0, 0, -1), // Eye (position of camera)
-		glm::vec3(0, 0, -5), // Center (position to look at)
+		glm::vec3(0, 0, 3.2), // Eye (position of camera)
+		glm::vec3(0, 0, 0), // Center (position to look at)
 		glm::vec3(0, 1, 0), // Up vector
 		M_PI / 3, // Field of view in radians
 		WIDTH, // pixel width
@@ -73,7 +73,7 @@ int main(int argc, char const *argv[])
 			int index = (x + y * c.width());
 			SpectralDistribution sd;
 
-			static const int SUB_SAMPLING = 1;
+			static const int SUB_SAMPLING = 10;
 
 			for (int i = 0; i < SUB_SAMPLING; ++i)
 			{
@@ -81,7 +81,7 @@ int main(int argc, char const *argv[])
 			// Trying to cast a ray
 			Ray r = c.castRay(
 				x, // Pixel x 
-				(HEIGHT - y), // Pixel y 
+				(HEIGHT - y - 1), // Pixel y 
 				dis(gen), // Parameter x (>= -0.5 and < 0.5), for subsampling
 				dis(gen)); // Parameter y (>= -0.5 and < 0.5), for subsampling
 			sd += s.traceRay(r, 0);
@@ -100,6 +100,14 @@ int main(int argc, char const *argv[])
 		std::cout << percent_finished << " \% finished." << std::endl;
 		std::cout << "Estimated time left is " << hours << "h:" << minutes << "m:" << seconds << "s." << std::endl;
 	}
+
+	time(&time_now);
+	double time_elapsed = difftime(time_now, time_start);
+	int hours = time_elapsed / (60 * 60);
+	int minutes = (int(time_elapsed) % (60 * 60)) / 60;
+	int seconds = int(time_elapsed) % 60;
+
+	std::cout << "Rendering time : " << hours << "h:" << minutes << "m:" << seconds << "s." << std::endl;
 
 	// Convert to byte data
 	// This conversion should be more sophisticated later on,
