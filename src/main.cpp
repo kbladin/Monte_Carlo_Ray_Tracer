@@ -74,7 +74,7 @@ int main(int argc, char const *argv[])
 			int index = (x + y * c.width());
 			SpectralDistribution sd;
 
-			static const int SUB_SAMPLING = 50;
+			static const int SUB_SAMPLING = 1;
 
 			for (int i = 0; i < SUB_SAMPLING; ++i)
 			{

@@ -334,7 +334,8 @@ SpectralDistribution Scene::traceRay(Ray r, int iteration)
 						glm::vec3 helper = id.normal + glm::vec3(1,1,1);
 						glm::vec3 tangent = glm::normalize(glm::cross(id.normal, helper));
 
-						float rand1 = (*dis_)(*gen_);
+						// rand1 is a random number from the cosine estimator
+						float rand1 = glm::asin((*dis_)(*gen_));// (*dis_)(*gen_);
 						float rand2 = (*dis_)(*gen_);
 
 						// Uniform distribution
@@ -352,9 +353,9 @@ SpectralDistribution Scene::traceRay(Ray r, int iteration)
 							id.normal));
 
 						float brdf = 1 / (2 * M_PI); // Dependent on inclination and azimuth
-						float estimator = 1 / (2 * M_PI);
 
 						float cos_angle = glm::dot(random_direction, id.normal);
+						float estimator = cos_angle / M_PI;// 1 / (2 * M_PI);
 
 						recursive_ray.direction = random_direction;
 						L_indirect += traceRay(recursive_ray, iteration + 1) * brdf * cos_angle / estimator * id.material.color_diffuse;
