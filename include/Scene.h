@@ -30,6 +30,13 @@ private:
     std::mt19937* gen_;
     std::uniform_real_distribution<float>* dis_;
 
+	SpectralDistribution traceSpecularRay(Ray r, IntersectionData id, int iteration);
+	SpectralDistribution traceDiffuseRay(Ray r, IntersectionData id, int iteration);
+	SpectralDistribution traceLocalDiffuseRay(Ray r, IntersectionData id);
+	SpectralDistribution traceIndirectDiffuseRay(Ray r, IntersectionData id, int iteration);
+	SpectralDistribution traceRefractedRay(Ray r, IntersectionData id, int iteration, glm::vec3 offset, bool inside);
+
+
 public:
 	Scene();
 	~Scene();
@@ -37,6 +44,7 @@ public:
 	bool intersect(IntersectionData* id, Ray r);
 	bool intersectLamp(LightSourceIntersectionData* light_id, Ray r);
 	glm::vec3 shake(glm::vec3 r, float power);
+
 	SpectralDistribution traceRay(Ray r, int iteration);
 };
 
