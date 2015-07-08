@@ -27,8 +27,8 @@ private:
 	Material* diffuse_gray_;
 
 	std::random_device rd_;
-    std::mt19937* gen_;
-    std::uniform_real_distribution<float>* dis_;
+  std::mt19937* gen_;
+  std::uniform_real_distribution<float>* dis_;
 
 	SpectralDistribution traceSpecularRay(Ray r, IntersectionData id, int iteration);
 	SpectralDistribution traceDiffuseRay(Ray r, IntersectionData id, int iteration);

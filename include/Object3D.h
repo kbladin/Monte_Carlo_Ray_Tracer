@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 #include "utils.h"
 
+// Axis aligned bounding box
 struct AABB
 {
 	glm::vec3 min;
@@ -63,6 +64,7 @@ public:
 	bool intersect(IntersectionData* id, Ray r) const;
 };
 
+// P0, P1, and P2 defines a paralellogram which is the plane
 class Plane : public Object3D
 {
 private:

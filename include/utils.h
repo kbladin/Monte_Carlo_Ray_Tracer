@@ -8,10 +8,15 @@ class SpectralDistribution
 {
 public:
 	SpectralDistribution();
-	~SpectralDistribution();
+	~SpectralDistribution(){};
 
-	friend std::ostream& operator<<(std::ostream& os, const SpectralDistribution& sd);
-	friend SpectralDistribution operator*(float f, const SpectralDistribution& sd);
+	// Various operators for SpectralDistribution
+	friend std::ostream& operator<<(
+		std::ostream& os,
+		const SpectralDistribution& sd);
+	friend SpectralDistribution operator*(
+		float f,
+		const SpectralDistribution& sd);
 	float& operator[](const int i);
 	SpectralDistribution operator+(const SpectralDistribution& sd) const;
 	SpectralDistribution operator-(const SpectralDistribution& sd) const;
@@ -23,6 +28,9 @@ public:
 	SpectralDistribution operator-=(const SpectralDistribution& sd);
 	SpectralDistribution operator/=(const float& f);
 
+	// Currently not used as wavelengths. We only care about three channels,
+	// (hence three wavelengths) r, g, b. These would not correspond to real
+	// wavelengths at the moments since r is the lowest and blue is the highest.
 	static const int N_WAVELENGTHS = 3;
 	static const int MIN_WAVELENGTH = 300;
 	static const int MAX_WAVELENGTH = 700;
@@ -37,8 +45,8 @@ struct Material
 	float specular_reflectance; // [0 , 1] part of reflectance
 	float transmissivity; // [0 , 1]
 	float refraction_index; // [1 (air) , 2.4 (diamond)]
-	float polish_power; // High => near perfect reflection
-	float clearness_power; // High => near perfect refraction
+	float polish_power; // [1 , inf) High => near perfect reflection
+	float clearness_power; // [1 , inf) High => near perfect refraction
 
 	static Material air();
 };
@@ -59,8 +67,8 @@ struct IntersectionData
 
 struct LightSourceIntersectionData
 {
-	SpectralDistribution color;
-	float emittance;
+	SpectralDistribution color; // The color of the light source
+	float emittance; // The emittance of the light source
 	glm::vec3 normal; // Normal of the surface hit by the ray
 	float t; // The distance the ray travelled before intersecting
 };

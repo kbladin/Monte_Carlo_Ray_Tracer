@@ -11,11 +11,6 @@ SpectralDistribution::SpectralDistribution()
 	}
 }
 
-SpectralDistribution::~SpectralDistribution()
-{
-	
-}
-
 std::ostream& operator<<(std::ostream& os, const SpectralDistribution& sd)
 {
 	os << "[ ";

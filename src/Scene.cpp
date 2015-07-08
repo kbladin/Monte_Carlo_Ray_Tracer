@@ -416,13 +416,15 @@ SpectralDistribution Scene::traceRay(Ray r, int iteration)
 			inside = true;
 		
 		float transmissivity = id.material.transmissivity;
+		float reflectance = id.material.reflectance;
 		float specularity = id.material.specular_reflectance;
 
 		SpectralDistribution total;
 		if (1 - transmissivity)
-		{ // Completely or partly reflective
+		{ // Completely or partly reflected
 			Ray recursive_ray = r;
 			// New position same in both cases, can be computed once outside
+			// of trace functions
 			recursive_ray.position = r.position + id.t * r.direction +
 				(inside ? -offset : offset);
 			SpectralDistribution specular_part =
@@ -439,7 +441,10 @@ SpectralDistribution Scene::traceRay(Ray r, int iteration)
 						id,
 						iteration) * (1 - specularity) :
 					SpectralDistribution();
-			total += (specular_part + diffuse_part) * (1 - transmissivity);
+			total +=
+				(specular_part + diffuse_part) *
+				(1 - transmissivity) *
+				reflectance;
 		}
 		if (transmissivity)
 		{ // Completely or partly transmissive

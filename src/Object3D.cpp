@@ -18,8 +18,9 @@ bool AABB::intersect(Ray r) const
 
 	// r.dir is unit direction vector of ray
 	glm::vec3 dirfrac(1.0f / direction.x, 1.0f / direction.y, 1.0f / direction.z);
-	// lb is the corner of AABB with minimal coordinates - left bottom, rt is maximal corner
-	// r.org is origin of ray
+	// lb is the corner of AABB with minimal coordinates - left bottom, 
+	// rt is maximal corner
+	// r.org is the origin of ray
 	float t1 = (min.x - origin.x)*dirfrac.x;
 	float t2 = (max.x - origin.x)*dirfrac.x;
 	float t3 = (min.y - origin.y)*dirfrac.y;
@@ -27,8 +28,12 @@ bool AABB::intersect(Ray r) const
 	float t5 = (min.z - origin.z)*dirfrac.z;
 	float t6 = (max.z - origin.z)*dirfrac.z;
 
-	float tmin = glm::max(glm::max(glm::min(t1, t2), glm::min(t3, t4)), glm::min(t5, t6));
-	float tmax = glm::min(glm::min(glm::max(t1, t2), glm::max(t3, t4)), glm::max(t5, t6));
+	float tmin = glm::max(
+		glm::max(glm::min(t1, t2), glm::min(t3, t4)),
+		glm::min(t5, t6));
+	float tmax = glm::min(
+		glm::min(glm::max(t1, t2), glm::max(t3, t4)),
+		glm::max(t5, t6));
 
 	// if tmax < 0, ray (line) is intersecting AABB, but whole AABB is behing us
 	if (tmax < 0)

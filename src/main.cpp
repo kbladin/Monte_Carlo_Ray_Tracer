@@ -52,9 +52,10 @@ int main(int argc, char const *argv[])
 	Scene s;
 
 	// intensities will hold image data
-	SpectralDistribution* intensities = new SpectralDistribution[WIDTH * HEIGHT]; // w * h * rgb
+	SpectralDistribution* intensities = new SpectralDistribution[WIDTH * HEIGHT];
 	// intensities need to be converted to rgb pixel data for displaying
-	unsigned char* pixel_values = new unsigned char[WIDTH * HEIGHT * 3]; // w * h * rgb
+	unsigned char* pixel_values =
+		new unsigned char[WIDTH * HEIGHT * 3]; // w * h * rgb
 
 	time_t time_start, time_now;
 	time(&time_start);
@@ -70,7 +71,6 @@ int main(int argc, char const *argv[])
 		#pragma omp parallel for
 		for (int y = 0; y < HEIGHT; ++y)
 		{
-
 			int index = (x + y * c.width());
 			SpectralDistribution sd;
 
@@ -78,19 +78,19 @@ int main(int argc, char const *argv[])
 
 			for (int i = 0; i < SUB_SAMPLING; ++i)
 			{
-			// Subsampling loop goes here later
-			// Trying to cast a ray
-			Ray r = c.castRay(
-				x, // Pixel x 
-				(HEIGHT - y - 1), // Pixel y 
-				dis(gen), // Parameter x (>= -0.5 and < 0.5), for subsampling
-				dis(gen)); // Parameter y (>= -0.5 and < 0.5), for subsampling
-			sd += s.traceRay(r, 0);
+				Ray r = c.castRay(
+					x, // Pixel x
+					(HEIGHT - y - 1), // Pixel y 
+					dis(gen), // Parameter x (>= -0.5 and < 0.5), for subsampling
+					dis(gen)); // Parameter y (>= -0.5 and < 0.5), for subsampling
+				sd += s.traceRay(r, 0);
 			}
 			intensities[index] = sd / SUB_SAMPLING;
 		}
+
+		// To show how much time we have left.
 		float percent_finished = (x+1) * 100 / float(c.width());
-	    time(&time_now);
+	  time(&time_now);
 		double time_elapsed = difftime(time_now, time_start);
 		double time_left = (time_elapsed / percent_finished) *
 			(100 - percent_finished);
@@ -99,16 +99,23 @@ int main(int argc, char const *argv[])
 		int seconds = int(time_left) % 60;
 
 		std::cout << percent_finished << " \% finished." << std::endl;
-		std::cout << "Estimated time left is " << hours << "h:" << minutes << "m:" << seconds << "s." << std::endl;
+		std::cout << "Estimated time left is "
+			<< hours << "h:"
+			<< minutes << "m:"
+			<< seconds << "s." << std::endl;
 	}
 
+	// To show how much time it actually took to render.
 	time(&time_now);
 	double time_elapsed = difftime(time_now, time_start);
 	int hours = time_elapsed / (60 * 60);
 	int minutes = (int(time_elapsed) % (60 * 60)) / 60;
 	int seconds = int(time_elapsed) % 60;
 
-	std::cout << "Rendering time : " << hours << "h:" << minutes << "m:" << seconds << "s." << std::endl;
+	std::cout << "Rendering time : "
+		<< hours << "h:"
+		<< minutes << "m:"
+		<< seconds << "s." << std::endl;
 
 	// Convert to byte data
 	// This conversion should be more sophisticated later on,
@@ -120,9 +127,12 @@ int main(int argc, char const *argv[])
 		for (int y = 0; y < c.height(); ++y)
 		{
 			int index = (x + y * c.width());
-			pixel_values[index * 3 + 0] = char(int(glm::clamp(glm::pow(intensities[index][0],gamma), 0.0f, 1.0f) * 255)); // Red
-			pixel_values[index * 3 + 1] = char(int(glm::clamp(glm::pow(intensities[index][1],gamma), 0.0f, 1.0f) * 255)); // Green
-			pixel_values[index * 3 + 2] = char(int(glm::clamp(glm::pow(intensities[index][2],gamma), 0.0f, 1.0f) * 255)); // Blue
+			pixel_values[index * 3 + 0] = char(int(glm::clamp(
+				glm::pow(intensities[index][0],gamma), 0.0f, 1.0f) * 255)); // Red
+			pixel_values[index * 3 + 1] = char(int(glm::clamp(
+				glm::pow(intensities[index][1],gamma), 0.0f, 1.0f) * 255)); // Green
+			pixel_values[index * 3 + 2] = char(int(glm::clamp(
+				glm::pow(intensities[index][2],gamma), 0.0f, 1.0f) * 255)); // Blue
 		}
 	}
 
@@ -131,11 +141,11 @@ int main(int argc, char const *argv[])
 	// Save the image data to file
 	savePPM(file_name.c_str(), WIDTH, HEIGHT, pixel_values);
 	
+	// Clean up
 	delete [] intensities;
 	delete [] pixel_values;
   
 	// Make a beep sound
 	std::cout << '\a';
-	
 	return 0;
 }

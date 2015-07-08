@@ -2,11 +2,6 @@
 
 #include <iostream>
 
-// Function for debugging
-std::ostream& operator<<(std::ostream& out, const glm::vec3 v){
-   return out << "[" << v.x << " , " << v.y << " , " << v.z  << "]";
-}
-
 Camera::Camera (
 	glm::vec3 eye,
 	glm::vec3 center,
@@ -15,10 +10,10 @@ Camera::Camera (
 	int width,
 	int height) :
 
-	EYE_(eye),
-	CENTER_(center),
-	UP_(up),
-	FOV_(fov),
+	eye_(eye),
+	center_(center),
+	up_(up),
+	fov_(fov),
 	WIDTH_(width),
 	HEIGHT_(height)
 {}
@@ -43,9 +38,9 @@ Ray Camera::castRay(
 	else
 	{
 		// View and perspective matrices are used in the unProject() function
-		glm::mat4 V = glm::lookAt(EYE_, CENTER_, UP_);
+		glm::mat4 V = glm::lookAt(eye_, center_, up_);
 		float aspect = float(WIDTH_) / HEIGHT_;
-		glm::mat4 P = glm::perspective(FOV_, aspect, 0.1f, 100.0f);
+		glm::mat4 P = glm::perspective(fov_, aspect, 0.1f, 100.0f);
 
 		// The unProject() function returns a vector in world-space which
 		// defines a direction out of the frustum depending on which pixel
@@ -66,6 +61,7 @@ Ray Camera::castRay(
 
 		r.position = from;
 		r.direction = direction;
+		 // Set air as the starting material for the ray to travel in.
 		r.material = Material::air();
 	}
 	return r;

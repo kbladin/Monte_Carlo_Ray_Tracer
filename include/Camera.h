@@ -9,26 +9,30 @@
 class Camera
 {
 private:
-		const glm::vec3 EYE_;
-		const glm::vec3 CENTER_;
-		const glm::vec3 UP_;
-		const float FOV_;
+		glm::vec3 eye_;
+		glm::vec3 center_;
+		glm::vec3 up_;
+		float fov_;
 		const int WIDTH_;
 		const int HEIGHT_;
 public:
 	Camera(
-		glm::vec3 eye,
-		glm::vec3 center,
-		glm::vec3 up,
-		float fov,
-		int width,
-		int height);
+		const glm::vec3 eye,
+		const glm::vec3 center,
+		const glm::vec3 up,
+		const float fov,
+		const int width,
+		const int height);
 	~Camera(){};
 
 	const int width() {return WIDTH_;}
 	const int height() {return HEIGHT_;}
 
-	Ray castRay(int pixel_x, int pixel_y, float parameter_x, float parameter_y);
+	Ray castRay(
+		const int pixel_x, // [0, WIDTH_ - 1]
+		const int pixel_y, // [0, HEIGHT_ - 1]
+		const float parameter_x, // [-0.5, 0.5]
+		const float parameter_y); // [-0.5, 0.5]
 };
 
 #endif // CAMERA_H
