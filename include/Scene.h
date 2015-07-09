@@ -36,7 +36,6 @@ private:
 	SpectralDistribution traceIndirectDiffuseRay(Ray r, IntersectionData id, int iteration);
 	SpectralDistribution traceRefractedRay(Ray r, IntersectionData id, int iteration, glm::vec3 offset, bool inside);
 
-
 public:
 	Scene();
 	~Scene();
