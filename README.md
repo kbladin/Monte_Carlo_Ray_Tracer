@@ -10,7 +10,7 @@ The algorithm recursively trace light rays from the camera out in the scene and 
 
 * Some predefined object classes (spheres, planes).
 * Possibility to load triangle meshes in to the scene.
-	* Mesh objects are geiven an axis aligned bounding box for faster rendering.
+	* Mesh objects are given an axis aligned bounding box for faster rendering.
 * Material properties for 3D objects
 * Monte Carlo ray tracing algorithm, simulates many light phenomena:
 	* Color bleeding
@@ -19,13 +19,14 @@ The algorithm recursively trace light rays from the camera out in the scene and 
 	* Reflection
 		* Currently not considering the Fresnel effect.
 	* Refraction
-		* Uses schlicks approximation to Fresnels equations for reflected part.
+		* Uses Schlick's approximation to Fresnels equations for reflected part.
+* Simple paralellization using openMP.
 
 ## Things I would like to add
 
 * Change the algorithm in to a bidirectional path tracing algorithm.
 * Stopping rays according to the Russian roulette method.
-* Other optimizations (reduce cash misses, simplify code, precomputing).
+* Other optimizations (reduce cash misses, simplify code, precomputing, better paralelization technique).
 * Include an XML parser so that it is possible load a scene from an XML-file at run time instead of having to recompile when changing the scene.
 * Implement a field of view algorithm.
 * Make different wavelengths refract a different amount and increase number of wavelengths. This way it is possible to achieve rainbow effects from refraction.
