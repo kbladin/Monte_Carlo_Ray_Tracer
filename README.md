@@ -1,16 +1,35 @@
-# global_illumination
-Starting a project in writing a ray tracer algorithm for global illumination of a simple virtual 3D scene.
+# Global Illumination
 
-## TO DO:
-* Create scene object classes for object to place in the scene
-	* This is probably where most work lies, need intersection definitions and recursive ray tracing.
-	* Possibly one base class Object3D with all functions such as reflect() refract() shadowRay() etc.
-	* Sphere class
-	* Box class
-	* Plane class
-	* Possibly a TriangleMesh class
-* Include an XML parser so that we can load a scene from an XML-file at run time instead of having to recompile when changing the scene
-* Convert the simple spectral distributions (three channels) to RGB byte data in a more sophisticated manner (eg. gamma correction or logarithmic scales)
-* Implement a field of view algorithm
-* Make different wavelengths refract a different amount and increase number of wavelengths. This way we can achieve rainbow effects from refraction.
-	* This requires a more thoughtful way of converting spectral distributions to RGB image data
+This project is a program for rendering virtual 3D scenes with a global illumination algorithm called Monte Carlo ray tracing.
+
+The algorithm recursively trace light rays from the camera out in the scene and bounces them around on / through the surface of objects.
+
+![](doc_images/2015-07-15-03:51:01.ppm "Rendered image")
+
+## Things it has
+
+* Some predefined object classes (spheres, planes).
+* Possibility to load triangle meshes in to the scene.
+	* Mesh objects are geiven an axis aligned bounding box for faster rendering.
+* Material properties for 3D objects
+* Monte Carlo ray tracing algorithm, simulates many light phenomena:
+	* Color bleeding
+	* Caustics
+	* Soft shadows
+	* Reflection
+		* Currently not considering the Fresnel effect.
+	* Refraction
+		* Uses schlicks approximation to Fresnels equations for reflected part.
+
+## Things I would like to add
+
+* Change the algorithm in to a bidirectional path tracing algorithm.
+* Stopping rays according to the Russian roulette method.
+* Other optimizations (reduce cash misses, simplify code, precomputing).
+* Include an XML parser so that it is possible load a scene from an XML-file at run time instead of having to recompile when changing the scene.
+* Implement a field of view algorithm.
+* Make different wavelengths refract a different amount and increase number of wavelengths. This way it is possible to achieve rainbow effects from refraction.
+	* This requires a more thoughtful way of converting spectral distributions to RGB image data.
+	* Probably way to costly.
+* Make the triangle mesh rendering faster.
+	* Maybe with the use of oct trees.
