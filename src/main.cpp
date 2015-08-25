@@ -37,8 +37,8 @@ const std::string currentDateTime() {
 
 int main(int argc, char const *argv[])
 {
-	static const int WIDTH = 800 / 2; // 1024
-	static const int HEIGHT = 600 / 2; // 768
+	static const int WIDTH = 1024 * 4;
+	static const int HEIGHT = 768 * 4;
 	// The camera is used to cast appropriate initial rays
 	Camera c(
 		glm::vec3(0, 0, 3.2), // Eye (position of camera)
@@ -63,6 +63,11 @@ int main(int argc, char const *argv[])
 	std::random_device rd;
 	std::mt19937 gen(rd());
 	std::uniform_real_distribution<float> dis(-0.5, 0.5);
+
+
+	float percent_finished = 0;
+	std::cout << "Rendering started!" << std::endl;
+	std::cout << percent_finished << " \% finished." << std::endl;
 
 	// Loop through all pixels to calculate their intensities by ray-tracing
 	// This loop could and should be parallellized.
@@ -89,8 +94,8 @@ int main(int argc, char const *argv[])
 		}
 
 		// To show how much time we have left.
-		float percent_finished = (x+1) * 100 / float(c.width());
-	  time(&time_now);
+		percent_finished = (x+1) * 100 / float(c.width());
+	  	time(&time_now);
 		double time_elapsed = difftime(time_now, time_start);
 		double time_left = (time_elapsed / percent_finished) *
 			(100 - percent_finished);

@@ -39,7 +39,7 @@ Scene::Scene ()
 	glass_->reflectance = 1;
 	glass_->specular_reflectance = 1;
 	glass_->transmissivity = 1;
-	glass_->refraction_index = 1.5;
+	glass_->refraction_index = 2;
 	glass_->clearness_power = 1000;
 	glass_->polish_power = 1000;
 
