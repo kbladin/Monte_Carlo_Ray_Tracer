@@ -36,10 +36,10 @@ Scene::Scene ()
 	glass_->color_specular[0] = 1;
 	glass_->color_specular[1] = 1;
 	glass_->color_specular[2] = 1;
-	glass_->reflectance = 0;
+	glass_->reflectance = 1;
 	glass_->specular_reflectance = 1;
 	glass_->transmissivity = 1;
-	glass_->refraction_index = 2;
+	glass_->refraction_index = 1.5;
 	glass_->clearness_power = 1000;
 	glass_->polish_power = 1000;
 
