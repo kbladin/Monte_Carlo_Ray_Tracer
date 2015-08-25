@@ -1,5 +1,6 @@
 #include "../include/Object3D.h"
 
+#include <random>
 #include <iostream>
 
 #include <glm/glm.hpp>
@@ -78,8 +79,12 @@ Mesh::Mesh(Material * material) :
 	Object3D(material)
 {
 	transform_ = glm::scale(glm::mat4(), glm::vec3(0.3f,0.3f,0.3f));
-	transform_ = glm::orientation(glm::vec3(0.7,-0.3,-0.3), glm::vec3(0,1,0)) * transform_;
-	transform_ = glm::translate(glm::mat4(), glm::vec3(0.0f,-0.4f,0.3f)) * transform_;
+	transform_ = glm::orientation(
+		glm::vec3(0.7,-0.3,-0.3),
+		glm::vec3(0,1,0)) * transform_;
+	transform_ = glm::translate(
+		glm::mat4(),
+		glm::vec3(0.0f,-0.4f,0.3f)) * transform_;
 
 	loadOBJ("cube.obj", positions_, uvs_, normals_);
 
@@ -96,31 +101,61 @@ bool Mesh::intersect(IntersectionData* id, Ray r) const
 	}
 	float t_smallest = 10000000;
 	bool intersect = false;
+
+	glm::vec3 p0;
+	glm::vec3 p1;
+	glm::vec3 p2;
+
+	glm::vec3 e1, e2;  //Edge1, Edge2
+	glm::vec3 P, Q, T;
+	float det, inv_det, u, v;
+	float t;
+
 	for (int i = 0; i < positions_.size(); i=i+3)
 	{
-		glm::vec3 p0 = glm::vec3(transform_ * glm::vec4(positions_[i + 0], 1));
-		glm::vec3 p1 = glm::vec3(transform_ * glm::vec4(positions_[i + 1], 1));
-		glm::vec3 p2 = glm::vec3(transform_ * glm::vec4(positions_[i + 2], 1));
+		// Möller–Trumbore intersection algorithm for triangle
 
-		glm::mat3 M;
-		M[0] = -r.direction;
-		M[1] = p1 - p0;
-		M[2] = p2 - p0;
+		p0 = glm::vec3(transform_ * glm::vec4(positions_[i + 0], 1));
+		p1 = glm::vec3(transform_ * glm::vec4(positions_[i + 1], 1));
+		p2 = glm::vec3(transform_ * glm::vec4(positions_[i + 2], 1));
 
-		glm::vec3 tuv =
-			glm::inverse(M) *
-			(r.position - p0);
+		// Find vectors for two edges sharing p0
+		e1 = p1 - p0;
+		e2 = p2 - p0;
+		// Begin calculating determinant - also used to calculate u parameter
+		P = glm::cross(r.direction, e2);
+		// if determinant is near zero, ray lies in plane of triangle
+		det = glm::dot(e1, P);
+		// NOT CULLING
+		if(det > -0.00001 && det < 0.00001) {
+			continue;
+		}
+		
+		inv_det = 1.f / det;
 
-		// To avoid confusion
-		// t is the parameter on the ray, u and v are parameters on the plane
-		float t = tuv.x;
-		float u = tuv.y;
-		float v = tuv.z;
+		//calculate distance from V1 to ray origin
+		T = r.position - p0;
 
-		if (u >= 0 && v >= 0 && u + v <= 1 && // Within the boundary
-			t >= 0 && // t needs to be positive to travel forward on the ray
-			t < t_smallest)
-		{
+		//Calculate u parameter and test bound
+		u = glm::dot(T, P) * inv_det;
+		//The intersection lies outside of the triangle
+		if(u < 0.f || u > 1.f) {
+			continue;
+		}
+
+		//Prepare to test v parameter
+		Q = glm::cross(T, e1);
+
+		//Calculate V parameter and test bound
+		v = glm::dot(r.direction, Q) * inv_det;
+		//The intersection lies outside of the triangle
+		if(v < 0.f || u + v  > 1.f) {
+			continue;
+		}
+
+		t = glm::dot(e2, Q) * inv_det;
+
+		if(t > 0.00001 && t < t_smallest) { //ray intersection
 			t_smallest = t;
 			glm::vec3 n0 = glm::vec3(transform_ * glm::vec4(normals_[i + 0], 0));
 			glm::vec3 n1 = glm::vec3(transform_ * glm::vec4(normals_[i + 1], 0));
@@ -307,30 +342,46 @@ Plane::Plane(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, Material* material) :
 
 bool Plane::intersect(IntersectionData* id, Ray r) const
 {
-	glm::mat3 M;
-	M[0] = -r.direction;
-	M[1] = P1_ - P0_;
-	M[2] = P2_ - P0_;
+	// Möller–Trumbore intersection algorithm
 
-	glm::vec3 tuv = glm::inverse(M) * (r.position - P0_);
+	glm::vec3 e1, e2;  //Edge1, Edge2
+	glm::vec3 P, Q, T;
+	float det, inv_det, u, v;
+	float t;
 
-	// To avoid confusion
-	// t is the parameter on the ray, u and v are parameters on the plane
-	float t = tuv.x;
-	float u = tuv.y;
-	float v = tuv.z;
+	// Find vectors for two edges sharing P0_
+	e1 = P1_ - P0_;
+	e2 = P2_ - P0_;
+	// Begin calculating determinant - also used to calculate u parameter
+	P = glm::cross(r.direction, e2);
+	// if determinant is near zero, ray lies in plane of triangle
+	det = glm::dot(e1, P);
+	// NOT CULLING
+	if(det > -0.00001 && det < 0.00001) return false;
+		inv_det = 1.f / det;
 
-	if (u >= 0 && u <= 1 && v >= 0 && v <= 1 && // Within the boundary
-		t >= 0) // t needs to be positive to travel forward on the ray
-	{
-		glm::vec3 n = glm::cross(u * (P1_ - P0_), v * (P2_ - P0_));
-		id->t = t;
-		id->normal = glm::normalize(n);
-		id->material = material();
-		return true;
+	// calculate distance from P0_ to ray origin
+	T = r.position - P0_;
+	Q = glm::cross(T, e1);
+
+	// Calculate u parameter and test bound
+	u = glm::dot(T, P) * inv_det;
+	v = glm::dot(r.direction, Q) * inv_det;
+
+	// The intersection lies outside of the plane
+	if(u < 0.f || u > 1.f || v < 0.f || v > 1.f) return false;
+
+	t = glm::dot(e2, Q) * inv_det;
+
+	if(t > 0.00001) { //ray intersection
+	id->t = t;
+	id->normal = glm::normalize(glm::cross(e1, e2));
+	id->material = material();
+	return true;
 	}
-	else
-		return false;
+
+	// No hit, no win
+	return false;
 }
 
 glm::vec3 Plane::getPointOnSurface(float u, float v) const
@@ -338,6 +389,18 @@ glm::vec3 Plane::getPointOnSurface(float u, float v) const
 	glm::vec3 v1 = P1_ - P0_;
 	glm::vec3 v2 = P2_ - P0_;
 	return P0_ + u * v1 + v * v2;
+}
+
+glm::vec3 Plane::getNormal() const
+{
+	glm::vec3 v1 = P1_ - P0_;
+	glm::vec3 v2 = P2_ - P0_;
+	return glm::normalize(glm::cross(v1, v2));
+}
+
+glm::vec3 Plane::getFirstTangent() const
+{
+	return glm::normalize(P1_ - P0_);
 }
 
 // --- LightSource class functions --- //
@@ -371,4 +434,43 @@ bool LightSource::intersect(LightSourceIntersectionData* light_id, Ray r)
 glm::vec3 LightSource::getPointOnSurface(float u, float v)
 {
 	return emitter_.getPointOnSurface(u, v);
+}
+
+std::vector<Ray> LightSource::shootLightRay()
+{
+	std::vector<Ray> rays;
+
+	// Move random code out later
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::uniform_real_distribution<float> dis(0, 1);
+
+	Ray first;
+	first.position = getPointOnSurface(dis(gen), dis(gen));
+
+	// Get a uniformly distributed vector
+	glm::vec3 normal = emitter_.getNormal();
+	glm::vec3 tangent = emitter_.getFirstTangent();
+	// rand1 is a random number from the cosine estimator
+	float rand1 = glm::asin(dis(gen));// (*dis_)(*gen_);
+	float rand2 = dis(gen);
+
+	// Uniform distribution
+	float inclination = glm::acos(1 - rand1);//glm::acos(1 -  2 * (*dis_)(*gen_));
+	float azimuth = 2 * M_PI * rand2;
+	// Change the actual vector
+	glm::vec3 random_direction = normal;
+	random_direction = glm::normalize(glm::rotate(
+		random_direction,
+		inclination,
+		tangent));
+	random_direction = glm::normalize(glm::rotate(
+		random_direction,
+		azimuth,
+		normal));
+
+	first.direction = random_direction;
+	first.material = Material::air();
+	
+	return rays;
 }

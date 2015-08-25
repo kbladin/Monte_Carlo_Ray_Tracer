@@ -37,8 +37,8 @@ const std::string currentDateTime() {
 
 int main(int argc, char const *argv[])
 {
-	static const int WIDTH = 800 / 4; // 1024
-	static const int HEIGHT = 600 / 4; // 768
+	static const int WIDTH = 800 / 2; // 1024
+	static const int HEIGHT = 600 / 2; // 768
 	// The camera is used to cast appropriate initial rays
 	Camera c(
 		glm::vec3(0, 0, 3.2), // Eye (position of camera)
