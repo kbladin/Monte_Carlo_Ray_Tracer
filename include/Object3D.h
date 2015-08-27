@@ -1,19 +1,11 @@
 #ifndef OBJECT_3D
 
+#include "OctTreeAABB.h"
+
 #include <vector>
 
 #include <glm/glm.hpp>
 #include "utils.h"
-
-// Axis aligned bounding box
-struct AABB
-{
-	glm::vec3 min;
-	glm::vec3 max;
-	glm::mat4 transform;
-
-	bool intersect(Ray r) const;
-};
 
 class Object3D
 {
@@ -35,11 +27,12 @@ private:
 	std::vector<glm::vec3> normals_;
 
 	glm::mat4 transform_;
+	OctTreeAABB* ot_aabb_;
 
-	AABB aabb_;
+	friend class OctNodeAABB;
 public:
-	Mesh(Material * material);
-	~Mesh(){};
+	Mesh(glm::mat4 transform, const char* file_path, Material * material);
+	~Mesh(){ delete ot_aabb_; };
 
 	virtual bool 	intersect(IntersectionData* id, Ray r) const;
  	static bool 	loadOBJ(
@@ -47,8 +40,9 @@ public:
 		std::vector<glm::vec3> & out_vertices, 
 		std::vector<glm::vec2> & out_uvs,
 		std::vector<glm::vec3> & out_normals);
-	glm::vec3 		getMinPosition();
-	glm::vec3 		getMaxPosition();
+	glm::vec3 		getMinPosition() const;
+	glm::vec3 		getMaxPosition() const;
+	glm::mat4		getTransform() const;
 };
 
 class Sphere : public Object3D

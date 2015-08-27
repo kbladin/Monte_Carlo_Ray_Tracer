@@ -28,8 +28,6 @@ const std::string currentDateTime() {
     struct tm  tstruct;
     char       buf[80];
     tstruct = *localtime(&now);
-    // Visit http://en.cppreference.com/w/cpp/chrono/c/strftime
-    // for more information about date/time format
     strftime(buf, sizeof(buf), "%Y-%m-%d-%X", &tstruct);
 
     return buf;
@@ -37,8 +35,11 @@ const std::string currentDateTime() {
 
 int main(int argc, char const *argv[])
 {
-	static const int WIDTH = 1024 * 4;
-	static const int HEIGHT = 768 * 4;
+	time_t time_start, time_now, rendertime_start;
+	time(&time_start);
+
+	static const int WIDTH = 1024 / 4;
+	static const int HEIGHT = 768 / 4;
 	// The camera is used to cast appropriate initial rays
 	Camera c(
 		glm::vec3(0, 0, 3.2), // Eye (position of camera)
@@ -57,22 +58,20 @@ int main(int argc, char const *argv[])
 	unsigned char* pixel_values =
 		new unsigned char[WIDTH * HEIGHT * 3]; // w * h * rgb
 
-	time_t time_start, time_now;
-	time(&time_start);
-
 	std::random_device rd;
 	std::mt19937 gen(rd());
 	std::uniform_real_distribution<float> dis(-0.5, 0.5);
 
+	time(&rendertime_start);
 
 	float percent_finished = 0;
 	std::cout << "Rendering started!" << std::endl;
 	std::cout << percent_finished << " \% finished." << std::endl;
 
 	// Loop through all pixels to calculate their intensities by ray-tracing
-	// This loop could and should be parallellized.
 	for (int x = 0; x < WIDTH; ++x)
 	{
+		// Parallellize the for loop with openMP.
 		#pragma omp parallel for
 		for (int y = 0; y < HEIGHT; ++y)
 		{
@@ -96,7 +95,7 @@ int main(int argc, char const *argv[])
 		// To show how much time we have left.
 		percent_finished = (x+1) * 100 / float(c.width());
 	  	time(&time_now);
-		double time_elapsed = difftime(time_now, time_start);
+		double time_elapsed = difftime(time_now, rendertime_start);
 		double time_left = (time_elapsed / percent_finished) *
 			(100 - percent_finished);
 		int hours = time_left / (60 * 60);

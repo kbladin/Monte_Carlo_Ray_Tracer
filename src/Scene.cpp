@@ -122,7 +122,20 @@ Scene::Scene ()
 	objects_.push_back(new Sphere(glm::vec3(0.8,-0.7,0.7), 0.3, mirror_));
 	objects_.push_back(new Sphere(glm::vec3(-0.9,-0.3,0.5), 0.3, glass_));
 	objects_.push_back(new Sphere(glm::vec3(0.9,0.3,-0), 0.2, diffuse_blue_));
-	objects_.push_back(new Mesh(diffuse_cyan_));
+	
+	glm::mat4 mesh_transform = glm::scale(glm::mat4(), glm::vec3(0.7f,0.7f,0.7f));
+	/*
+	mesh_transform = glm::orientation(
+		glm::vec3(0.7,-0.3,-0.3),
+		glm::vec3(0,1,0)) * mesh_transform;
+	mesh_transform = glm::translate(
+		glm::mat4(),
+		glm::vec3(0.0f,-0.4f,0.3f)) * mesh_transform;
+	*/
+	objects_.push_back(new Mesh(
+		mesh_transform,
+		"suzanne.obj",
+		diffuse_cyan_));
 }
 
 Scene::~Scene()
