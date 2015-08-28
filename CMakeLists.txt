@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 2.8)
 
 # Set gcc / g++ compiler to be able to use openMP 
-SET(CMAKE_C_COMPILER gcc-5)
-SET(CMAKE_CXX_COMPILER g++-5)
+SET(CMAKE_C_COMPILER "/usr/local/bin/gcc-5")
+SET(CMAKE_CXX_COMPILER "/usr/local/bin/g++-5")
 
 # Create project
 SET(PROJECT_NAME global_illumination)

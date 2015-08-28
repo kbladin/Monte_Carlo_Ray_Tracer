@@ -26,6 +26,7 @@ class OctNodeAABB
 {
 public:
 	OctNodeAABB(
+		OctNodeAABB* parent,
 		int depth,
 		Mesh* mesh,
 		glm::vec3 aabb_min,
@@ -35,6 +36,8 @@ public:
 	bool intersect(IntersectionData* id, Ray r) const;
 
 protected:
+	OctNodeAABB* parent_;
+
 	Mesh* mesh_;
 	AABB aabb_;
 	std::vector<unsigned short> triangle_indices_;

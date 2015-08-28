@@ -97,11 +97,13 @@ bool AABB::intersectTriangle(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2) const
 // --- OctNodeAABB class functions --- //
 
 OctNodeAABB::OctNodeAABB(
+	OctNodeAABB* parent,
 	int depth,
 	Mesh* mesh,
 	glm::vec3 aabb_min,
 	glm::vec3 aabb_max)
 {
+	parent_ = parent;
 	mesh_ = mesh;
 	aabb_.min = aabb_min;
 	aabb_.max = aabb_max;
@@ -121,6 +123,7 @@ OctNodeAABB::OctNodeAABB(
 	else
 	{ // Continue recursion
 		left_bottom_far_ = 		new OctNodeAABB(
+			this,
 			depth - 1,
 			mesh,
 			glm::vec3(
@@ -132,6 +135,7 @@ OctNodeAABB::OctNodeAABB(
 				(aabb_min.y + aabb_max.y) / 2,
 				(aabb_min.z + aabb_max.z) / 2));
 		right_bottom_far_ = 	new OctNodeAABB(
+			this,
 			depth - 1,
 			mesh,
 			glm::vec3(
@@ -143,6 +147,7 @@ OctNodeAABB::OctNodeAABB(
 				(aabb_min.y + aabb_max.y) / 2,
 				(aabb_min.z + aabb_max.z) / 2));
 		left_top_far_ = 		new OctNodeAABB(
+			this,
 			depth - 1,
 			mesh,
 			glm::vec3(
@@ -154,6 +159,7 @@ OctNodeAABB::OctNodeAABB(
 				aabb_max.y,
 				(aabb_min.z + aabb_max.z) / 2));
 		right_top_far_ = 		new OctNodeAABB(
+			this,
 			depth - 1,
 			mesh,
 			glm::vec3(
@@ -165,6 +171,7 @@ OctNodeAABB::OctNodeAABB(
 				aabb_max.y,
 				(aabb_min.z + aabb_max.z) / 2));
 		left_bottom_near_ = 	new OctNodeAABB(
+			this,
 			depth - 1,
 			mesh,
 			glm::vec3(
@@ -176,6 +183,7 @@ OctNodeAABB::OctNodeAABB(
 				(aabb_min.y + aabb_max.y) / 2,
 				aabb_max.z));
 		right_bottom_near_ = 	new OctNodeAABB(
+			this,
 			depth - 1,
 			mesh,
 			glm::vec3(
@@ -187,6 +195,7 @@ OctNodeAABB::OctNodeAABB(
 				(aabb_min.y + aabb_max.y) / 2,
 				aabb_max.z));
 		left_top_near_ = 		new OctNodeAABB(
+			this,
 			depth - 1,
 			mesh,
 			glm::vec3(
@@ -198,6 +207,7 @@ OctNodeAABB::OctNodeAABB(
 				aabb_max.y,
 				aabb_max.z));
 		right_top_near_ = 		new OctNodeAABB(
+			this,
 			depth - 1,
 			mesh,
 			glm::vec3(
@@ -213,18 +223,27 @@ OctNodeAABB::OctNodeAABB(
 	// Find which triangles are in this AABB
 	// A bit of a waste to check all triangles but this way the node does not
 	// have to have a pointer to its parent.
-	for (int i = 0; i < mesh->indices_.size(); i=i+3)
+	
+
+	std::vector<unsigned short>& index_list =
+		true/*!parent_*/ ?
+		mesh->indices_ :
+		parent_->triangle_indices_;
+	
+	for (int i = 0; i < index_list.size(); i=i+3)
 	{
 		if (aabb_.intersectTriangle(
-			mesh->positions_[mesh->indices_[i + 0]],
-			mesh->positions_[mesh->indices_[i + 1]],
-			mesh->positions_[mesh->indices_[i + 2]]))
+			mesh->positions_[index_list[i + 0]],
+			mesh->positions_[index_list[i + 1]],
+			mesh->positions_[index_list[i + 2]]))
 		{ // Insert the triangle in this node
-			triangle_indices_.push_back(mesh->indices_[i + 0]);
-			triangle_indices_.push_back(mesh->indices_[i + 1]);
-			triangle_indices_.push_back(mesh->indices_[i + 2]);
+			triangle_indices_.push_back(index_list[i + 0]);
+			triangle_indices_.push_back(index_list[i + 1]);
+			triangle_indices_.push_back(index_list[i + 2]);
 		}
 	}
+
+	
 }
 
 OctNodeAABB::~OctNodeAABB()
@@ -320,21 +339,29 @@ bool OctNodeAABB::intersect(IntersectionData* id, Ray r) const
 	else
 	{ // Check intersection with all the child nodes
 		if(left_bottom_far_->aabb_.intersect(r))
-			return left_bottom_far_->intersect(id, r);
-		else if(right_bottom_far_->aabb_.intersect(r))
-			return right_bottom_far_->intersect(id, r);
-		else if(left_top_far_->aabb_.intersect(r))
-			return left_top_far_->intersect(id, r);
-		else if(right_top_far_->aabb_.intersect(r))
-			return right_top_far_->intersect(id, r);
-		else if(left_bottom_near_->aabb_.intersect(r))
-			return left_bottom_near_->intersect(id, r);
-		else if(right_bottom_near_->aabb_.intersect(r))
-			return right_bottom_near_->intersect(id, r);
-		else if(left_top_near_->aabb_.intersect(r))
-			return left_top_near_->intersect(id, r);
-		else if(right_top_near_->aabb_.intersect(r))
-			return right_top_near_->intersect(id, r);
+			//if (left_bottom_far_->intersect(id, r))
+				return left_bottom_far_->intersect(id, r);
+		if(right_bottom_far_->aabb_.intersect(r))
+			//if (right_bottom_far_->intersect(id, r))
+				return right_bottom_far_->intersect(id, r);
+		if(left_top_far_->aabb_.intersect(r))
+			//if (left_top_far_->intersect(id, r))
+				return left_top_far_->intersect(id, r);
+		if(right_top_far_->aabb_.intersect(r))
+			//if (right_top_far_->intersect(id, r))
+				return right_top_far_->intersect(id, r);
+		if(left_bottom_near_->aabb_.intersect(r))
+			//if (left_bottom_near_->intersect(id, r))
+				return left_bottom_near_->intersect(id, r);
+		if(right_bottom_near_->aabb_.intersect(r))
+			//if (right_bottom_near_->intersect(id, r))
+				return right_bottom_near_->intersect(id, r);
+		if(left_top_near_->aabb_.intersect(r))
+			//if (left_top_near_->intersect(id, r))
+				return left_top_near_->intersect(id, r);
+		if(right_top_near_->aabb_.intersect(r))
+			//if (right_top_near_->intersect(id, r))
+				return right_top_near_->intersect(id, r);
 	}
 	return false;
 }
@@ -345,6 +372,7 @@ OctTreeAABB::OctTreeAABB(
 	int depth,
 	Mesh* mesh) : 
 	OctNodeAABB(
+		NULL,
 		depth,
 		mesh,
 		mesh->getMinPosition(),
