@@ -37,7 +37,7 @@ public:
 protected:
 	Mesh* mesh_;
 	AABB aabb_;
-	std::vector<int> triangle_indices_;
+	std::vector<unsigned short> triangle_indices_;
 
 	OctNodeAABB* left_bottom_far_;
 	OctNodeAABB* right_bottom_far_;

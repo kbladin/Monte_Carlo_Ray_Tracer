@@ -1,6 +1,11 @@
 #ifndef OBJLOADER_H
 #define OBJLOADER_H
 
+#include <vector>
+
+#include <glm/glm.hpp>
+#include <glm/ext.hpp>
+
 bool loadOBJ(
 	const char * path, 
 	std::vector<glm::vec3> & out_vertices, 

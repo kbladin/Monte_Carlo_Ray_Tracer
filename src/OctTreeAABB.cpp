@@ -213,14 +213,16 @@ OctNodeAABB::OctNodeAABB(
 	// Find which triangles are in this AABB
 	// A bit of a waste to check all triangles but this way the node does not
 	// have to have a pointer to its parent.
-	for (int i = 0; i < mesh->positions_.size(); i=i+3)
+	for (int i = 0; i < mesh->indices_.size(); i=i+3)
 	{
 		if (aabb_.intersectTriangle(
-			mesh->positions_[i],
-			mesh->positions_[i + 1],
-			mesh->positions_[i + 2]))
+			mesh->positions_[mesh->indices_[i + 0]],
+			mesh->positions_[mesh->indices_[i + 1]],
+			mesh->positions_[mesh->indices_[i + 2]]))
 		{ // Insert the triangle in this node
-			triangle_indices_.push_back(i);
+			triangle_indices_.push_back(mesh->indices_[i + 0]);
+			triangle_indices_.push_back(mesh->indices_[i + 1]);
+			triangle_indices_.push_back(mesh->indices_[i + 2]);
 		}
 	}
 }
@@ -255,13 +257,13 @@ bool OctNodeAABB::intersect(IntersectionData* id, Ray r) const
 		float det, inv_det, u, v;
 		float t;
 
-		for (int i = 0; i < triangle_indices_.size(); i++)
+		for (int i = 0; i < triangle_indices_.size(); i=i+3)
 		{
 			// Möller–Trumbore intersection algorithm for triangle
 
-			p0 = glm::vec3(aabb_.transform * glm::vec4(mesh_->positions_[triangle_indices_[i] + 0], 1));
-			p1 = glm::vec3(aabb_.transform * glm::vec4(mesh_->positions_[triangle_indices_[i] + 1], 1));
-			p2 = glm::vec3(aabb_.transform * glm::vec4(mesh_->positions_[triangle_indices_[i] + 2], 1));
+			p0 = glm::vec3(aabb_.transform * glm::vec4(mesh_->positions_[triangle_indices_[i + 0]], 1));
+			p1 = glm::vec3(aabb_.transform * glm::vec4(mesh_->positions_[triangle_indices_[i + 1]], 1));
+			p2 = glm::vec3(aabb_.transform * glm::vec4(mesh_->positions_[triangle_indices_[i + 2]], 1));
 
 			// Find vectors for two edges sharing p0
 			e1 = p1 - p0;
@@ -301,9 +303,9 @@ bool OctNodeAABB::intersect(IntersectionData* id, Ray r) const
 
 			if(t > 0.00001 && t < t_smallest) { //ray intersection
 				t_smallest = t;
-				glm::vec3 n0 = glm::vec3(aabb_.transform * glm::vec4(mesh_->normals_[triangle_indices_[i] + 0], 0));
-				glm::vec3 n1 = glm::vec3(aabb_.transform * glm::vec4(mesh_->normals_[triangle_indices_[i] + 1], 0));
-				glm::vec3 n2 = glm::vec3(aabb_.transform * glm::vec4(mesh_->normals_[triangle_indices_[i] + 2], 0));
+				glm::vec3 n0 = glm::vec3(aabb_.transform * glm::vec4(mesh_->normals_[triangle_indices_[i + 0]], 0));
+				glm::vec3 n1 = glm::vec3(aabb_.transform * glm::vec4(mesh_->normals_[triangle_indices_[i + 1]], 0));
+				glm::vec3 n2 = glm::vec3(aabb_.transform * glm::vec4(mesh_->normals_[triangle_indices_[i + 2]], 0));
 
 				// Interpolate to find normal
 				glm::vec3 n = (1 - u - v) * n0 + u * n1 + v * n2;

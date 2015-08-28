@@ -25,6 +25,7 @@ private:
 	std::vector<glm::vec3> positions_;
 	std::vector<glm::vec2> uvs_;
 	std::vector<glm::vec3> normals_;
+	std::vector<unsigned short> indices_;
 
 	glm::mat4 transform_;
 	OctTreeAABB* ot_aabb_;
@@ -35,11 +36,7 @@ public:
 	~Mesh(){ delete ot_aabb_; };
 
 	virtual bool 	intersect(IntersectionData* id, Ray r) const;
- 	static bool 	loadOBJ(
-		const char * path, 
-		std::vector<glm::vec3> & out_vertices, 
-		std::vector<glm::vec2> & out_uvs,
-		std::vector<glm::vec3> & out_normals);
+ 	
 	glm::vec3 		getMinPosition() const;
 	glm::vec3 		getMaxPosition() const;
 	glm::mat4		getTransform() const;

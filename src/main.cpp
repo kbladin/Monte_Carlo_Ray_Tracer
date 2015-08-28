@@ -38,8 +38,8 @@ int main(int argc, char const *argv[])
 	time_t time_start, time_now, rendertime_start;
 	time(&time_start);
 
-	static const int WIDTH = 1024 / 4;
-	static const int HEIGHT = 768 / 4;
+	static const int WIDTH = 1024 / 8;
+	static const int HEIGHT = 768 / 8;
 	// The camera is used to cast appropriate initial rays
 	Camera c(
 		glm::vec3(0, 0, 3.2), // Eye (position of camera)
