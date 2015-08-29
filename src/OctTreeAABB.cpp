@@ -76,18 +76,19 @@ OctNodeAABB::OctNodeAABB(
 	glm::vec3 aabb_min,
 	glm::vec3 aabb_max)
 {
-	//parent_ = parent;
 	mesh_ = mesh;
 	aabb_.min = aabb_min;
 	aabb_.max = aabb_max;
 	aabb_.transform = mesh->getTransform();
 
 	// Find which triangles are in this AABB
-	std::vector<unsigned short>& index_list =
+	// If it has no parent this is the root node
+	std::vector<unsigned int>& index_list =
 		!parent ?
 		mesh->indices_ :
 		parent->triangle_indices_;
 	
+	// Check parents triangles and see which of them is in this node
 	for (int i = 0; i < index_list.size(); i=i+3)
 	{
 		if (aabb_.intersectTriangle(
@@ -101,13 +102,13 @@ OctNodeAABB::OctNodeAABB(
 		}
 	}
 	
-	if (depth == 0 || triangle_indices_.size() < 1 * 3)
+	if (depth == 0 || triangle_indices_.size() <= 1 * 6)
 	{ // Base case
 		for (int i=0; i<8; i++)
 			children_[i] = NULL;
 	}
 	else
-	{ // Continue recursion
+	{ // Continue recursion, create more children
 		glm::vec3 child_aabb_min;
 		glm::vec3 child_aabb_max;
 		for (int i = 0; i < 8; ++i)
@@ -142,6 +143,7 @@ OctNodeAABB::~OctNodeAABB()
 bool OctNodeAABB::intersect(IntersectionData* id, Ray r) const
 {
 	if (triangle_indices_.size() == 0)
+		// No triangles in this node
 		return false;
 	else if (children_[0] == NULL)
 	{ // Reached a leaf node
@@ -157,6 +159,7 @@ bool OctNodeAABB::intersect(IntersectionData* id, Ray r) const
 		float det, inv_det, u, v;
 		float t;
 
+		// Check intersection for all triangles in this node
 		for (int i = 0; i < triangle_indices_.size(); i=i+3)
 		{
 			// Möller–Trumbore intersection algorithm for triangle

@@ -16,7 +16,7 @@ public:
 	virtual ~Object3D(){};
 
 	virtual bool 	intersect(IntersectionData* id, Ray r) const = 0;
-	Material 			material() const;
+	Material 		material() const;
 };
 
 class Mesh : public Object3D
@@ -25,7 +25,7 @@ private:
 	std::vector<glm::vec3> positions_;
 	std::vector<glm::vec2> uvs_;
 	std::vector<glm::vec3> normals_;
-	std::vector<unsigned short> indices_;
+	std::vector<unsigned int> indices_;
 
 	glm::mat4 transform_;
 	OctTreeAABB* ot_aabb_;
@@ -63,10 +63,10 @@ public:
 	Plane(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, Material* material);
 	~Plane(){};
 
-	bool 			intersect(IntersectionData* id, Ray r) const;
-	glm::vec3 getPointOnSurface(float u, float v) const;
-	glm::vec3 getNormal() const;
-	glm::vec3 getFirstTangent() const;
+	bool 		intersect(IntersectionData* id, Ray r) const;
+	glm::vec3 	getPointOnSurface(float u, float v) const;
+	glm::vec3 	getNormal() const;
+	glm::vec3 	getFirstTangent() const;
 };
 
 class LightSource
@@ -82,8 +82,8 @@ public:
 		SpectralDistribution color);
 	~LightSource(){};
 	
-	bool 							intersect(LightSourceIntersectionData* light_id, Ray r);
-	glm::vec3 				getPointOnSurface(float u, float v);
+	bool 				intersect(LightSourceIntersectionData* light_id, Ray r);
+	glm::vec3 			getPointOnSurface(float u, float v);
 	std::vector<Ray> 	shootLightRay();
 
 	const float emittance;

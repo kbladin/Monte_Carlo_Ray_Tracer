@@ -132,11 +132,11 @@ int main(int argc, char const *argv[])
 		{
 			int index = (x + y * c.width());
 			pixel_values[index * 3 + 0] = char(int(glm::clamp(
-				glm::pow(intensities[index][0],gamma), 0.0f, 1.0f) * 255)); // Red
+				glm::pow(intensities[index][0] / 2.f,gamma), 0.0f, 1.0f) * 255)); // Red
 			pixel_values[index * 3 + 1] = char(int(glm::clamp(
-				glm::pow(intensities[index][1],gamma), 0.0f, 1.0f) * 255)); // Green
+				glm::pow(intensities[index][1] / 2.f,gamma), 0.0f, 1.0f) * 255)); // Green
 			pixel_values[index * 3 + 2] = char(int(glm::clamp(
-				glm::pow(intensities[index][2],gamma), 0.0f, 1.0f) * 255)); // Blue
+				glm::pow(intensities[index][2] / 2.f,gamma), 0.0f, 1.0f) * 255)); // Blue
 		}
 	}
 
@@ -151,5 +151,5 @@ int main(int argc, char const *argv[])
   
 	// Make a beep sound
 	std::cout << '\a';
-	return 0;
+	return EXIT_SUCCESS;
 }

@@ -1,6 +1,10 @@
 #include "../include/Scene.h"
 
+#include "../external_libraries/common_include/pugixml.h"
+#include "../include/xmlTraverser.h"
+
 #include <iostream>
+#include <string>
 #include <random>
 
 // --- Scene class functions --- //
@@ -9,133 +13,18 @@ Scene::Scene ()
 {
 	gen_ = new std::mt19937(rd_());
 	dis_ = new std::uniform_real_distribution<float>(0, 1);
-    
-	mirror_ = new Material();
-	glass_ = new Material();
-	diffuse_red_ = new Material();
-	diffuse_green_ = new Material();
-	diffuse_blue_ = new Material();
-	diffuse_cyan_ = new Material();
-	diffuse_white_ = new Material();
-	diffuse_gray_ = new Material();
-	air_ = new Material();
 
-	mirror_->color_diffuse[0] = 0.2;
-	mirror_->color_diffuse[1] = 0.2;
-	mirror_->color_diffuse[2] = 0.8;
-	mirror_->color_specular[0] = 1;
-	mirror_->color_specular[1] = 0.8;
-	mirror_->color_specular[2] = 0.5;
-	mirror_->reflectance = 1;
-	mirror_->specular_reflectance = 1;
-	mirror_->polish_power = 1000;
+    pugi::xml_document doc;
+    std::cout << "Loading XML file." << std::endl;
+    pugi::xml_parse_result result = doc.load_file("tree.xml");
+    std::cout << "Result: " << result.description() << std::endl;
 
-	glass_->color_diffuse[0] = 1.0;
-	glass_->color_diffuse[1] = 1.0;
-	glass_->color_diffuse[2] = 1.0;
-	glass_->color_specular[0] = 1;
-	glass_->color_specular[1] = 1;
-	glass_->color_specular[2] = 1;
-	glass_->reflectance = 1;
-	glass_->specular_reflectance = 1;
-	glass_->transmissivity = 1;
-	glass_->refraction_index = 2;
-	glass_->clearness_power = 1000;
-	glass_->polish_power = 1000;
+	scene_traverser walker;
+	walker.scene = this;
 
-	*air_ = Material::air();
-
-	diffuse_red_->color_diffuse[0] = 1;
-	diffuse_red_->color_diffuse[1] = 0.2;
-	diffuse_red_->color_diffuse[2] = 0.2;
-	diffuse_red_->reflectance = 1;
-
-	diffuse_green_->color_diffuse[0] = 0.2;
-	diffuse_green_->color_diffuse[1] = 1;
-	diffuse_green_->color_diffuse[2] = 0.2;
-	diffuse_green_->reflectance = 1;
-
-	diffuse_blue_->color_diffuse[0] = 0.6;
-	diffuse_blue_->color_diffuse[1] = 0.6;
-	diffuse_blue_->color_diffuse[2] = 1;
-	diffuse_blue_->reflectance = 1;
-
-	diffuse_cyan_->color_diffuse[0] = 0.5;
-	diffuse_cyan_->color_diffuse[1] = 0.8;
-	diffuse_cyan_->color_diffuse[2] = 0.8;
-	diffuse_cyan_->reflectance = 1;
-
-	diffuse_white_->color_diffuse[0] = 1;
-	diffuse_white_->color_diffuse[1] = 1;
-	diffuse_white_->color_diffuse[2] = 1;
-	diffuse_white_->reflectance = 1;
-
-	diffuse_gray_->color_diffuse[0] = 0.5;
-	diffuse_gray_->color_diffuse[1] = 0.5;
-	diffuse_gray_->color_diffuse[2] = 0.5;
-	diffuse_gray_->reflectance = 1;
-	
-
-	SpectralDistribution lamp_color;
-	lamp_color[0] = 1;
-	lamp_color[1] = 1;
-	lamp_color[2] = 1;
-	float lamp_size = 0.6;
-	lamps_.push_back(new LightSource(
-		glm::vec3(-lamp_size / 2,1 - 0.0001,(1 - lamp_size / 2)), // P0
-		glm::vec3(lamp_size / 2,1 - 0.0001,(1 - lamp_size / 2)), // P1
-		glm::vec3(-lamp_size / 2,1 - 0.0001,(1 + lamp_size / 2)), // P2
-		3, // Emittance
-		lamp_color));
-
-	// Back
-	objects_.push_back(new Plane(
-		glm::vec3(-1.5,-1,-1), // P0
-		glm::vec3(1.5,-1,-1), // P1
-		glm::vec3(-1.5,1,-1), // P2
-		diffuse_white_));
-	// Left
-	objects_.push_back(new Plane(
-		glm::vec3(-1.5,-1,-1), // P0
-		glm::vec3(-1.5,1,-1), // P1
-		glm::vec3(-1.5,-1,4), // P2
-		diffuse_red_));
-	// Right
-	objects_.push_back(new Plane(
-		glm::vec3(1.5,-1,-1), // P0
-		glm::vec3(1.5,-1,4), // P1
-		glm::vec3(1.5,1,-1), // P2
-		diffuse_green_));
-	// Roof
-	objects_.push_back(new Plane(
-		glm::vec3(-1.5,1,-1), // P0
-		glm::vec3(1.5,1,-1), // P1
-		glm::vec3(-1.5,1,4), // P2
-		diffuse_white_));
-	// Floor
-	objects_.push_back(new Plane(
-		glm::vec3(-1.5,-1,-1), // P0
-		glm::vec3(-1.5,-1,4), // P1
-		glm::vec3(1.5,-1,-1), // P2
-		diffuse_white_));
-
-	objects_.push_back(new Sphere(glm::vec3(0.8,-0.7,0.7), 0.3, mirror_));
-	objects_.push_back(new Sphere(glm::vec3(-0.9,-0.3,0.5), 0.3, glass_));
-	objects_.push_back(new Sphere(glm::vec3(0.9,0.3,-0), 0.2, diffuse_blue_));
-	
-	glm::mat4 mesh_transform = glm::scale(glm::mat4(), glm::vec3(0.7f,0.7f,0.7f));
-	/*
-	mesh_transform = glm::orientation(
-		glm::vec3(0.7,-0.3,-0.3),
-		glm::vec3(0,1,0)) * mesh_transform;
-	mesh_transform = glm::translate(
-		glm::mat4(),
-		glm::vec3(0.0f,-0.4f,0.3f)) * mesh_transform;
-	*/
-	objects_.push_back(new Mesh(
-		mesh_transform,
-		"untitled.obj",
-		diffuse_cyan_));
+	std::cout << "Creating scene from XML file." << std::endl;
+	doc.traverse(walker);
+    std::cout << "Scene created!" << std::endl;
 }
 
 Scene::~Scene()
@@ -151,16 +40,11 @@ Scene::~Scene()
 	{
 		delete lamps_[i];
 	}
-
-	delete mirror_;
-	delete glass_;
-	delete diffuse_red_;
-	delete diffuse_green_;
-	delete diffuse_blue_;
-	delete diffuse_cyan_;
-	delete diffuse_white_;
-	delete diffuse_gray_;
-	delete air_;
+	for(std::map<std::string, Material* >::iterator it = materials_.begin();
+		it != materials_.end();
+		it++) {
+		delete it->second;
+	}
 }
 
 bool Scene::intersect(IntersectionData* id, Ray r)
@@ -604,7 +488,7 @@ SpectralDistribution Scene::traceRefractedRay(
 		
 		// Reflected ray
 		// Change the material the ray is travelling in
-		recursive_ray_reflected.material = *air_;
+		recursive_ray_reflected.material = Material::air();
 		recursive_ray_reflected.position = r.position + id.t * r.direction +offset;
 		// Refracted ray
 		// Change the material the ray is travelling in

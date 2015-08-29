@@ -50,7 +50,7 @@ Mesh::Mesh(glm::mat4 transform, const char* file_path, Material * material) :
 		normals_);
 
 	std::cout << "Building octree for mesh." << std::endl;
-	ot_aabb_ = new OctTreeAABB(4, this);
+	ot_aabb_ = new OctTreeAABB(6, this);
 	std::cout << "Octree built." << std::endl;
 }
 
