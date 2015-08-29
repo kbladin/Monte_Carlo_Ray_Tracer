@@ -36,20 +36,22 @@ public:
 	bool intersect(IntersectionData* id, Ray r) const;
 
 protected:
-	OctNodeAABB* parent_;
+	//OctNodeAABB* parent_;
 
 	Mesh* mesh_;
 	AABB aabb_;
 	std::vector<unsigned short> triangle_indices_;
 
-	OctNodeAABB* left_bottom_far_;
-	OctNodeAABB* right_bottom_far_;
-	OctNodeAABB* left_top_far_;
-	OctNodeAABB* right_top_far_;
-	OctNodeAABB* left_bottom_near_;
-	OctNodeAABB* right_bottom_near_;
-	OctNodeAABB* left_top_near_;
-	OctNodeAABB* right_top_near_;
+	OctNodeAABB* children_[8]; // Child nodes
+	// In order:
+	// children_[0] = left_bottom_far_
+	// children_[1] = right_bottom_far_
+	// children_[2] = left_top_far_
+	// children_[3] = right_top_far_
+	// children_[4] = left_bottom_near_
+	// children_[5] = right_bottom_near_
+	// children_[6] = left_top_near_
+	// children_[7] = right_top_near_
 };
 
 // An octree containing axis aligned bounding boxes

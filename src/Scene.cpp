@@ -134,7 +134,7 @@ Scene::Scene ()
 	*/
 	objects_.push_back(new Mesh(
 		mesh_transform,
-		"suzanne.obj",
+		"untitled.obj",
 		diffuse_cyan_));
 }
 
