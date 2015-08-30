@@ -10,8 +10,15 @@ The algorithm recursively trace light rays from the camera out in the scene and 
 
 * Some predefined object classes (spheres, planes).
 * Possibility to load triangle meshes in to the scene.
-* Octree data structure used to partition triangles in meshes for faster rendering of triangle meshes.
+	* Octree data structure used to partition triangles for faster rendering.
 * Material properties for 3D objects
+	* Diffuse color
+	* Specular color
+	* Reflectance [0, 1]
+	* Specular reflectance [0 (diffuse), 1 (mirror)]
+	* Transmissivity [0, 1]
+	* Refraction_index [1 (air), 2.4 (diamond)]
+
 * Monte Carlo ray tracing algorithm, simulates many light phenomena:
 	* Color bleeding
 	* Caustics
