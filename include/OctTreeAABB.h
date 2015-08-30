@@ -56,9 +56,7 @@ protected:
 class OctTreeAABB : public OctNodeAABB
 {
 public:
-	OctTreeAABB(
-	int depth,
-	Mesh* mesh);
+	OctTreeAABB(Mesh* mesh);
 
 	~OctTreeAABB();
 private:

@@ -17,14 +17,7 @@ Object3D::Object3D(Material* material) :
 
 Material Object3D::material() const
 {
-	if (material_)
-	{
-		return *material_;
-	}
-	else
-	{
-		return Material();
-	}
+	return material_ ? *material_ : Material();
 }
 
 // --- Mesh class functions --- //
@@ -38,7 +31,8 @@ Mesh::Mesh(glm::mat4 transform, const char* file_path, Material * material) :
 	std::vector<glm::vec2> tmp_uvs;
 	std::vector<glm::vec3> tmp_normals;
 
-	loadOBJ(file_path, tmp_positions, tmp_uvs, tmp_normals);
+	if(!loadOBJ(file_path, tmp_positions, tmp_uvs, tmp_normals))
+		exit (EXIT_FAILURE);
 	indexVBO(
 		tmp_positions,
 		tmp_uvs,
@@ -50,7 +44,7 @@ Mesh::Mesh(glm::mat4 transform, const char* file_path, Material * material) :
 		normals_);
 
 	std::cout << "Building octree for mesh." << std::endl;
-	ot_aabb_ = new OctTreeAABB(6, this);
+	ot_aabb_ = new OctTreeAABB(this);
 	std::cout << "Octree built." << std::endl;
 }
 

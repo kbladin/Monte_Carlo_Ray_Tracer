@@ -102,7 +102,7 @@ OctNodeAABB::OctNodeAABB(
 		}
 	}
 	
-	if (depth == 0 || triangle_indices_.size() <= 1 * 6)
+	if (depth == 0 || triangle_indices_.size() <= 3 * 16)
 	{ // Base case
 		for (int i=0; i<8; i++)
 			children_[i] = NULL;
@@ -245,12 +245,10 @@ bool OctNodeAABB::intersect(IntersectionData* id, Ray r) const
 
 // --- OctTreeAABB class functions --- //
 
-OctTreeAABB::OctTreeAABB(
-	int depth,
-	Mesh* mesh) : 
+OctTreeAABB::OctTreeAABB(Mesh* mesh) : 
 	OctNodeAABB(
 		NULL,
-		depth,
+		8, // Maximum depth of tree
 		mesh,
 		mesh->getMinPosition(),
 		mesh->getMaxPosition())

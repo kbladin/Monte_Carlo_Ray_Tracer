@@ -87,7 +87,7 @@ private:
 	bool intersectLamp(LightSourceIntersectionData* light_id, Ray r);
 	glm::vec3 shake(glm::vec3 r, float power);
 public:
-	Scene();
+	Scene(const char* file_path);
 	~Scene();
 
 	SpectralDistribution traceRay(Ray r, int iteration);

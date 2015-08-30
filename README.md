@@ -4,7 +4,7 @@ This project is a program for rendering virtual 3D scenes with a global illumina
 
 The algorithm recursively trace light rays from the camera out in the scene and bounces them around on / through the surface of objects.
 
-![](doc_images/rendered_image.ppm "Rendered image")
+![](data/rendered_images/rendered_image.ppm "Rendered image")
 
 ## Things it has
 
@@ -21,14 +21,13 @@ The algorithm recursively trace light rays from the camera out in the scene and 
 	* Refraction
 		* Uses Schlick's approximation to Fresnels equations for reflected part.
 * Simple paralellization using openMP.
-
+* Using the XML parser pugixml to be able to load XML files describing the scenes.
 
 ## Things I would like to add
 
 * Change the algorithm in to a bidirectional path tracing algorithm.
 * Stopping rays according to the Russian roulette method.
 * Other optimizations (reduce cash misses, simplify code, precomputing, better paralellization technique).
-* Include an XML parser so that it is possible load a scene from an XML-file at run time instead of having to recompile when changing the scene.
 * Implement a field of view algorithm.
 * Make different wavelengths refract a different amount and increase number of wavelengths. This way it is possible to achieve rainbow effects from refraction.
 	* This requires a more thoughtful way of converting spectral distributions to RGB image data.

@@ -9,16 +9,25 @@
 
 // --- Scene class functions --- //
 
-Scene::Scene ()
+Scene::Scene (const char* file_path)
 {
+	if (!file_path)
+	{
+		std::cout << "No scene file specified. Please use a scene xml file as argument" << std::endl;
+		exit (EXIT_FAILURE);
+	}
+
 	gen_ = new std::mt19937(rd_());
 	dis_ = new std::uniform_real_distribution<float>(0, 1);
 
     pugi::xml_document doc;
     std::cout << "Loading XML file." << std::endl;
-    pugi::xml_parse_result result = doc.load_file("tree.xml");
+    pugi::xml_parse_result result = doc.load_file(file_path);
     std::cout << "Result: " << result.description() << std::endl;
 
+    if (!result)
+		exit (EXIT_FAILURE);
+	
 	scene_traverser walker;
 	walker.scene = this;
 
