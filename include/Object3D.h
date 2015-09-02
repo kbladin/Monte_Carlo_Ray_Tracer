@@ -58,13 +58,15 @@ public:
 class Plane : public Object3D
 {
 private:
-	const glm::vec3 P0_, P1_, P2_;
+	const glm::vec3 P0_, P1_, P2_, V1_, V2_, NORMAL_;
+	const float AREA_;
 public:
 	Plane(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, Material* material);
 	~Plane(){};
 
 	bool 		intersect(IntersectionData* id, Ray r) const;
 	glm::vec3 	getPointOnSurface(float u, float v) const;
+	float 		getArea() const;
 	glm::vec3 	getNormal() const;
 	glm::vec3 	getFirstTangent() const;
 };
@@ -78,15 +80,17 @@ public:
 		glm::vec3 p0,
 		glm::vec3 p1,
 		glm::vec3 p2,
-		float emittance,
+		float radiosity, // [Watts/m^2]
 		SpectralDistribution color);
 	~LightSource(){};
 	
-	bool 				intersect(LightSourceIntersectionData* light_id, Ray r);
-	glm::vec3 			getPointOnSurface(float u, float v);
+	bool 		intersect(LightSourceIntersectionData* light_id, Ray r);
+	glm::vec3 	getPointOnSurface(float u, float v);
+	float 		getArea() const;
+
 	std::vector<Ray> 	shootLightRay();
 
-	const float emittance;
+	const float radiosity; // [Watts/m^2]
 	const SpectralDistribution color;
 };
 

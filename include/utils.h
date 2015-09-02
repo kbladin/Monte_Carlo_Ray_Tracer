@@ -34,11 +34,14 @@ public:
 	static const int N_WAVELENGTHS = 3;
 	static const int MIN_WAVELENGTH = 300;
 	static const int MAX_WAVELENGTH = 700;
+	// The data contains radiance values in all wave lengths.
 	float data[N_WAVELENGTHS];
 };
 
 struct Material
 {
+	// The colors are reflectance distribution functions
+	// All channels are in the interval [0 , 1]
 	SpectralDistribution color_diffuse;
 	SpectralDistribution color_specular;
 	float reflectance; // [0 , 1]
@@ -68,7 +71,8 @@ struct IntersectionData
 struct LightSourceIntersectionData
 {
 	SpectralDistribution color; // The color of the light source
-	float emittance; // The emittance of the light source
+	float radiosity; // The radiosity of the light source [Watts/m^2]
+	float area; // The area of the light source [m^2]
 	glm::vec3 normal; // Normal of the surface hit by the ray
 	float t; // The distance the ray travelled before intersecting
 };

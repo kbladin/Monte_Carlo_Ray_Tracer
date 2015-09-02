@@ -14,8 +14,8 @@ Camera::Camera (
 	center_(center),
 	up_(up),
 	fov_(fov),
-	WIDTH_(width),
-	HEIGHT_(height)
+	WIDTH(width),
+	HEIGHT(height)
 {}
 
 Ray Camera::castRay(
@@ -25,8 +25,8 @@ Ray Camera::castRay(
 	float parameter_y)
 {
 	Ray r;
-	if (pixel_x < 0 || pixel_x > WIDTH_ - 1 ||
-		pixel_y < 0 || pixel_y > HEIGHT_ - 1 ||
+	if (pixel_x < 0 || pixel_x > WIDTH - 1 ||
+		pixel_y < 0 || pixel_y > HEIGHT - 1 ||
 		parameter_x < -0.5 || parameter_x > 0.5 ||
 		parameter_y < -0.5 || parameter_y > 0.5
 		)
@@ -39,7 +39,7 @@ Ray Camera::castRay(
 	{
 		// View and perspective matrices are used in the unProject() function
 		glm::mat4 V = glm::lookAt(eye_, center_, up_);
-		float aspect = float(WIDTH_) / HEIGHT_;
+		float aspect = float(WIDTH) / HEIGHT;
 		glm::mat4 P = glm::perspective(fov_, aspect, 0.1f, 100.0f);
 
 		// The unProject() function returns a vector in world-space which
@@ -50,12 +50,12 @@ Ray Camera::castRay(
 			glm::vec3(pixel_x + parameter_x, pixel_y + parameter_y, 0.0f),
 			V,
 			P,
-			glm::vec4(0, 0, WIDTH_, HEIGHT_));
+			glm::vec4(0, 0, WIDTH, HEIGHT));
 		glm::vec3 to = glm::unProject(
 			glm::vec3(pixel_x + parameter_x, pixel_y + parameter_y, 1.0f),
 			V,
 			P,
-			glm::vec4(0, 0, WIDTH_, HEIGHT_));
+			glm::vec4(0, 0, WIDTH, HEIGHT));
 
 		glm::vec3 direction = glm::normalize(to - from);
 

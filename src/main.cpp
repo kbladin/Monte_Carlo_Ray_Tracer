@@ -40,6 +40,8 @@ int main(int argc, char const *argv[])
 
 	static const int WIDTH = 1024 / 4;
 	static const int HEIGHT = 768 / 4;
+	static const int SUB_SAMPLING = 1;
+	
 	// The camera is used to cast appropriate initial rays
 	Camera c(
 		glm::vec3(0, 0, 3.2), // Eye (position of camera)
@@ -52,11 +54,11 @@ int main(int argc, char const *argv[])
 	// 3D objects are contained in the Scene object
 	Scene s(argv[1]);
 
-	// intensities will hold image data
-	SpectralDistribution* intensities = new SpectralDistribution[WIDTH * HEIGHT];
-	// intensities need to be converted to rgb pixel data for displaying
+	// radiance_values will hold image data
+	SpectralDistribution* radiance_values = new SpectralDistribution[c.WIDTH * c.HEIGHT];
+	// radiance_values need to be converted to rgb pixel data for displaying
 	unsigned char* pixel_values =
-		new unsigned char[WIDTH * HEIGHT * 3]; // w * h * rgb
+		new unsigned char[c.WIDTH * c.HEIGHT * 3]; // w * h * rgb
 
 	std::random_device rd;
 	std::mt19937 gen(rd());
@@ -68,32 +70,29 @@ int main(int argc, char const *argv[])
 	std::cout << "Rendering started!" << std::endl;
 	std::cout << percent_finished << " \% finished." << std::endl;
 
-	// Loop through all pixels to calculate their intensities by ray-tracing
-	for (int x = 0; x < WIDTH; ++x)
+	// Loop through all pixels to calculate their radiance_values by ray-tracing
+	for (int x = 0; x < c.WIDTH; ++x)
 	{
 		// Parallellize the for loop with openMP.
 		#pragma omp parallel for
-		for (int y = 0; y < HEIGHT; ++y)
+		for (int y = 0; y < c.HEIGHT; ++y)
 		{
-			int index = (x + y * c.width());
+			int index = (x + y * c.WIDTH);
 			SpectralDistribution sd;
-
-			static const int SUB_SAMPLING = 10;
-
 			for (int i = 0; i < SUB_SAMPLING; ++i)
 			{
 				Ray r = c.castRay(
 					x, // Pixel x
-					(HEIGHT - y - 1), // Pixel y 
+					(c.HEIGHT - y - 1), // Pixel y 
 					dis(gen), // Parameter x (>= -0.5 and < 0.5), for subsampling
 					dis(gen)); // Parameter y (>= -0.5 and < 0.5), for subsampling
 				sd += s.traceRay(r, 0);
 			}
-			intensities[index] = sd / SUB_SAMPLING;
+			radiance_values[index] = sd / SUB_SAMPLING;
 		}
 
 		// To show how much time we have left.
-		percent_finished = (x+1) * 100 / float(c.width());
+		percent_finished = (x+1) * 100 / float(c.WIDTH);
 	  	time(&time_now);
 		double time_elapsed = difftime(time_now, rendertime_start);
 		double time_left = (time_elapsed / percent_finished) *
@@ -126,17 +125,17 @@ int main(int argc, char const *argv[])
 	// Gamma correction and / or transformation to logarithmic scale etc.
 	// It should also be dependent on the maximum intensity value.
 	float gamma = 0.5;
-	for (int x = 0; x < c.width(); ++x)
+	for (int x = 0; x < c.WIDTH; ++x)
 	{
-		for (int y = 0; y < c.height(); ++y)
+		for (int y = 0; y < c.HEIGHT; ++y)
 		{
-			int index = (x + y * c.width());
+			int index = (x + y * c.WIDTH);
 			pixel_values[index * 3 + 0] = char(int(glm::clamp(
-				glm::pow(intensities[index][0] / 2.f,gamma), 0.0f, 1.0f) * 255)); // Red
+				glm::pow(radiance_values[index][0],gamma), 0.0f, 1.0f) * 255)); // Red
 			pixel_values[index * 3 + 1] = char(int(glm::clamp(
-				glm::pow(intensities[index][1] / 2.f,gamma), 0.0f, 1.0f) * 255)); // Green
+				glm::pow(radiance_values[index][1],gamma), 0.0f, 1.0f) * 255)); // Green
 			pixel_values[index * 3 + 2] = char(int(glm::clamp(
-				glm::pow(intensities[index][2] / 2.f,gamma), 0.0f, 1.0f) * 255)); // Blue
+				glm::pow(radiance_values[index][2],gamma), 0.0f, 1.0f) * 255)); // Blue
 		}
 	}
 
@@ -146,7 +145,7 @@ int main(int argc, char const *argv[])
 	savePPM(file_name.c_str(), WIDTH, HEIGHT, pixel_values);
 	
 	// Clean up
-	delete [] intensities;
+	delete [] radiance_values;
 	delete [] pixel_values;
   
 	// Make a beep sound

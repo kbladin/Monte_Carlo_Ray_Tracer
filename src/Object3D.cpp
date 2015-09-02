@@ -130,7 +130,12 @@ bool Sphere::intersect(IntersectionData* id, Ray r) const
 // --- Plane class functions --- //
 
 Plane::Plane(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, Material* material) : 
-	Object3D(material), P0_(p0), P1_(p1), P2_(p2)
+	Object3D(material),
+	P0_(p0),
+	P1_(p1),
+	P2_(p2),
+	NORMAL_(glm::normalize(glm::cross(p0 - p1, p0 - p2))),
+	AREA_(glm::length(glm::cross(p0 - p1, p0 - p2)))
 {}
 
 bool Plane::intersect(IntersectionData* id, Ray r) const
@@ -184,11 +189,14 @@ glm::vec3 Plane::getPointOnSurface(float u, float v) const
 	return P0_ + u * v1 + v * v2;
 }
 
+float Plane::getArea() const
+{
+	return AREA_;
+}
+
 glm::vec3 Plane::getNormal() const
 {
-	glm::vec3 v1 = P1_ - P0_;
-	glm::vec3 v2 = P2_ - P0_;
-	return glm::normalize(glm::cross(v1, v2));
+	return NORMAL_;
 }
 
 glm::vec3 Plane::getFirstTangent() const
@@ -202,10 +210,10 @@ LightSource::LightSource(
 	glm::vec3 p0,
 	glm::vec3 p1,
 	glm::vec3 p2,
-	float emittance,
+	float radiosity,
 	SpectralDistribution color) :
 	emitter_(p0, p1, p2, NULL),
-	emittance(emittance),
+	radiosity(radiosity),
 	color(color)
 {}
 
@@ -216,7 +224,8 @@ bool LightSource::intersect(LightSourceIntersectionData* light_id, Ray r)
 	{
 		light_id->normal = id.normal;
 		light_id->t = id.t;
-		light_id->emittance = emittance;
+		light_id->radiosity = radiosity;
+		light_id->area = getArea();
 		light_id->color = color;
 		return true;
 	}
@@ -227,6 +236,11 @@ bool LightSource::intersect(LightSourceIntersectionData* light_id, Ray r)
 glm::vec3 LightSource::getPointOnSurface(float u, float v)
 {
 	return emitter_.getPointOnSurface(u, v);
+}
+
+float LightSource::getArea() const
+{
+	return emitter_.getArea();
 }
 
 std::vector<Ray> LightSource::shootLightRay()

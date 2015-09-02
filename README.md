@@ -18,7 +18,6 @@ The algorithm recursively trace light rays from the camera out in the scene and 
 	* Specular reflectance [0 (diffuse), 1 (mirror)]
 	* Transmissivity [0, 1]
 	* Refraction_index [1 (air), 2.4 (diamond)]
-
 * Monte Carlo ray tracing algorithm, simulates many light phenomena:
 	* Color bleeding
 	* Caustics

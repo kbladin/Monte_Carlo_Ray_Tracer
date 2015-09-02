@@ -385,7 +385,7 @@ SpectralDistribution Scene::traceDiffuseRay(
 	SpectralDistribution total_diffuse = traceLocalDiffuseRay(r, id);
 	if (!(iteration >= 2)) // Do not end here
 		// Add the indirect illumination part (Monte Carlo sampling)
-		total_diffuse += traceIndirectDiffuseRay(r, id, iteration);
+		total_diffuse = total_diffuse * 0.5 + traceIndirectDiffuseRay(r, id, iteration) * 0.5;
 	return total_diffuse;
 }
 
@@ -395,6 +395,8 @@ SpectralDistribution Scene::traceLocalDiffuseRay(
 {
 	SpectralDistribution L_local;
 	// Cast shadow rays
+	// We devide up the area light source in to n_samples area parts.
+	// Used to define the solid angle
 	static const int n_samples = 10;
 	for (int i = 0; i < lamps_.size(); ++i)
 	{
@@ -406,14 +408,20 @@ SpectralDistribution Scene::traceLocalDiffuseRay(
 
 			float brdf = 1 / (2 * M_PI); // Dependent on inclination and azimuth
 			float estimator = 1 / (2 * M_PI); // Dependent on inclination and azimuth
-			float cos_angle = glm::dot(shadow_ray.direction, id.normal);
+			float cos_theta = glm::dot(shadow_ray.direction, id.normal);
 
-			LightSourceIntersectionData shadow_id;
+			LightSourceIntersectionData shadow_ray_id;
 
-			if(intersectLamp(&shadow_id, shadow_ray))
+			if(intersectLamp(&shadow_ray_id, shadow_ray))
 			{
-				float cos_light = glm::dot(shadow_id.normal, -shadow_ray.direction);
-				L_local += shadow_id.color * shadow_id.emittance * brdf * cos_angle / estimator * id.material.color_diffuse * 1 / glm::pow(glm::length(differance), 2) * glm::clamp(cos_light, 0.f, 1.f);
+				float cos_alpha = glm::dot(shadow_ray_id.normal, -shadow_ray.direction);
+				float light_solid_angle = shadow_ray_id.area / n_samples * glm::clamp(cos_alpha, 0.0f, 1.0f) / glm::pow(glm::length(differance), 2);
+
+				L_local +=
+					(shadow_ray_id.color * shadow_ray_id.radiosity) * // Radiosity
+					brdf * cos_theta / estimator *
+					id.material.color_diffuse *
+					light_solid_angle;// * 1 / glm::pow(glm::length(differance), 2) * glm::clamp(cos_alpha, 0.f, 1.f);
 			}
 		}
 	}
@@ -458,9 +466,11 @@ SpectralDistribution Scene::traceIndirectDiffuseRay(
 		float estimator = cos_angle / M_PI;// 1 / (2 * M_PI);
 
 		r.direction = random_direction;
+
 		L_indirect += traceRay(r, iteration + 1) * brdf * cos_angle / estimator * id.material.color_diffuse;
 	}
-	return L_indirect / n_samples;
+	return (L_indirect[0] < 1 && L_indirect[1] < 1 && L_indirect[2] < 2 ) ? L_indirect / n_samples : SpectralDistribution();
+	//return L_indirect / n_samples;
 }
 
 SpectralDistribution Scene::traceRefractedRay(
@@ -532,7 +542,7 @@ SpectralDistribution Scene::traceRay(Ray r, int iteration)
 	IntersectionData id;
 	LightSourceIntersectionData lamp_id;
 	if (intersectLamp(&lamp_id, r)) // Ray hitted light source
-		return lamp_id.color * lamp_id.emittance;
+		return lamp_id.color * lamp_id.radiosity;
 	else if (intersect(&id, r))
 	{ // Ray hit another object
 		// To make sure it does not intersect with itself again
