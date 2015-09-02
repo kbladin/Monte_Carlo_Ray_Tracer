@@ -1,4 +1,5 @@
 #ifndef OBJECT_3D
+#define OBJECT_3D
 
 #include "OctTreeAABB.h"
 
@@ -88,11 +89,10 @@ public:
 	glm::vec3 	getPointOnSurface(float u, float v);
 	float 		getArea() const;
 
-	std::vector<Ray> 	shootLightRay();
+	std::vector<Ray> shootLightRay();
 
 	const float radiosity; // [Watts/m^2]
 	const SpectralDistribution color;
 };
 
-#define OBJECT_3D
 #endif

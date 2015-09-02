@@ -23,6 +23,7 @@ private:
 
 	friend struct scene_traverser;
 	
+	/*
 	// Bidirectional path tracing for diffuse light
 	SpectralDistribution traceBidirectionalDiffuseRay(
 		Ray r,
@@ -57,7 +58,7 @@ private:
 		int iteration,
 		glm::vec3 offset,
 		bool inside);
-
+	*/
   	// Normal path tracing for diffuse ray
 	SpectralDistribution traceDiffuseRay(
 		Ray r,
@@ -82,6 +83,19 @@ private:
 		int iteration,
 		glm::vec3 offset,
 		bool inside);
+
+	// Specular and refractive tracing
+	Photon traceSpecularPhoton(
+		Ray r,
+		IntersectionData id,
+		int iteration);
+	Photon traceRefractedPhoton(
+		Ray r,
+		IntersectionData id,
+		int iteration,
+		glm::vec3 offset,
+		bool inside);
+	Photon tracePhoton(Ray r, int iteration);
 
 	bool intersect(IntersectionData* id, Ray r);
 	bool intersectLamp(LightSourceIntersectionData* light_id, Ray r);

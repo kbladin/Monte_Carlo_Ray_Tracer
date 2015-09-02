@@ -156,22 +156,7 @@ glm::vec3 Scene::shake(glm::vec3 r, float power)
 	return glm::normalize(shaked);
 }
 
-SpectralDistribution Scene::traceSpecularRay(
-	Ray r,
-	IntersectionData id,
-	int iteration)
-{
-	SpectralDistribution specular = SpectralDistribution();
-	if (!(iteration >= 5)) // Do not end here
-	{		
-		// Add some randomization to the direction vector
-		r.direction = glm::reflect(r.direction, id.normal);// shake(perfect_reflection, id.material.polish_power);
-		// Recursively trace the reflected ray
-		specular += traceRay(r, iteration + 1) * id.material.color_specular;
-	}
-	return specular;
-}
-
+/*
 SpectralDistribution Scene::traceBidirectionalDiffuseRay(
 	Ray r,
 	IntersectionData id,
@@ -183,8 +168,6 @@ SpectralDistribution Scene::traceBidirectionalDiffuseRay(
 
 	return SpectralDistribution();
 }
-
-/*
 
 std::vector<std::pair< Ray, IntersectionData > > Scene::forwardTraceLightRay(
 	Ray r,
@@ -376,6 +359,67 @@ std::vector<std::pair< Ray, IntersectionData > > Scene::forwardTraceRefractedRay
 }
 */
 
+/*
+Photon Scene::tracePhoton(Ray r, int iteration)
+{
+	IntersectionData id;
+	LightSourceIntersectionData lamp_id;
+	if (intersectLamp(&lamp_id, r)){ // Ray hitted light source
+		Photon to_return;
+		to_return.position = r.position + r.direction * lamp_id.t;
+		r.t * lamp_id.radiosity;
+	}
+	if (intersect(&id, r))
+	{ // Ray hit another object
+		// To make sure it does not intersect with itself again
+		glm::vec3 offset = id.normal * 0.0001f;
+		bool inside = false;
+		if (glm::dot(id.normal, r.direction) > 0) // The ray is inside an object
+			inside = true;
+		
+		float transmissivity = id.material.transmissivity;
+		float reflectance = id.material.reflectance;
+		float specularity = id.material.specular_reflectance;
+
+		SpectralDistribution total;
+		if (1 - transmissivity)
+		{ // Completely or partly reflected
+			Ray recursive_ray = r;
+			// New position same in both cases, can be computed once outside
+			// of trace functions
+			recursive_ray.position = r.position + id.t * r.direction +
+				(inside ? -offset : offset);
+			SpectralDistribution specular_part =
+				specularity ?
+					traceSpecularRay(
+						recursive_ray,
+						id,
+						iteration) * specularity :
+					SpectralDistribution();
+			SpectralDistribution diffuse_part =
+				(1 - specularity) ?
+					traceDiffuseRay(
+						recursive_ray,
+						id,
+						iteration) * (1 - specularity) :
+					SpectralDistribution();
+			total +=
+				(specular_part + diffuse_part) *
+				(1 - transmissivity) *
+				reflectance;
+		}
+		if (transmissivity)
+		{ // Completely or partly transmissive
+			SpectralDistribution transmitted_part =
+				traceRefractedRay(r, id, iteration, offset, inside);
+			total += transmitted_part * transmissivity;
+		}
+		return total;
+	}
+	return SpectralDistribution();
+}
+*/
+
 SpectralDistribution Scene::traceDiffuseRay(
 	Ray r,
 	IntersectionData id,
@@ -471,6 +515,22 @@ SpectralDistribution Scene::traceIndirectDiffuseRay(
 	}
 	return (L_indirect[0] < 1 && L_indirect[1] < 1 && L_indirect[2] < 2 ) ? L_indirect / n_samples : SpectralDistribution();
 	//return L_indirect / n_samples;
+}
+
+SpectralDistribution Scene::traceSpecularRay(
+	Ray r,
+	IntersectionData id,
+	int iteration)
+{
+	SpectralDistribution specular = SpectralDistribution();
+	if (!(iteration >= 5)) // Do not end here
+	{		
+		// Add some randomization to the direction vector
+		r.direction = glm::reflect(r.direction, id.normal);// shake(perfect_reflection, id.material.polish_power);
+		// Recursively trace the reflected ray
+		specular += traceRay(r, iteration + 1) * id.material.color_specular;
+	}
+	return specular;
 }
 
 SpectralDistribution Scene::traceRefractedRay(

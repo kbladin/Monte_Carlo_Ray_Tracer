@@ -61,6 +61,12 @@ struct Ray
 	Material material; // The material the ray is travelling in
 };
 
+struct Photon
+{
+	glm::vec3 position;
+	SpectralDistribution radiance;
+};
+
 struct IntersectionData
 {
 	Material material; // Material of the object hit by the ray
