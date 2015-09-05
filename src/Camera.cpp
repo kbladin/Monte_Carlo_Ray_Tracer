@@ -32,7 +32,7 @@ Ray Camera::castRay(
 		)
 	{
 		std::cout << "ERROR : Invalid arguments in castRay()" << std::endl;
-		r.position = glm::vec3(0);
+		r.origin = glm::vec3(0);
 		r.direction = glm::vec3(0);
 	}
 	else
@@ -59,7 +59,7 @@ Ray Camera::castRay(
 
 		glm::vec3 direction = glm::normalize(to - from);
 
-		r.position = from;
+		r.origin = from;
 		r.direction = direction;
 		 // Set air as the starting material for the ray to travel in.
 		r.material = Material::air();

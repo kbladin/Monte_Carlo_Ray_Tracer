@@ -125,7 +125,7 @@ int main(int argc, char const *argv[])
 	}
 
 
-	/*7
+	/*
 	s.setRenderMode(Scene::MONTE_CARLO);
 	std::cout << "Rendering diffuse light." << std::endl;
 	// Loop through all pixels to calculate their radiance_values by ray-tracing

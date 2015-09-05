@@ -551,7 +551,7 @@ SpectralDistribution Scene::traceLocalDiffuseRay(
 		for (int j = 0; j < n_samples; ++j)
 		{
 			Ray shadow_ray = r;
-			glm::vec3 differance = lamps_[i]->getPointOnSurface((*dis_)(*gen_),(*dis_)(*gen_)) - shadow_ray.position;
+			glm::vec3 differance = lamps_[i]->getPointOnSurface((*dis_)(*gen_),(*dis_)(*gen_)) - shadow_ray.origin;
 			shadow_ray.direction = glm::normalize(differance);
 
 			float brdf = 1 / (2 * M_PI); // Dependent on inclination and azimuth
@@ -671,11 +671,11 @@ SpectralDistribution Scene::traceRefractedRay(
 		// Reflected ray
 		// Change the material the ray is travelling in
 		recursive_ray_reflected.material = Material::air();
-		recursive_ray_reflected.position = r.position + id.t * r.direction +offset;
+		recursive_ray_reflected.origin = r.origin + id.t * r.direction +offset;
 		// Refracted ray
 		// Change the material the ray is travelling in
 		recursive_ray_refracted.material = id.material;
-		recursive_ray_refracted.position = r.position + id.t * r.direction -offset;
+		recursive_ray_refracted.origin = r.origin + id.t * r.direction -offset;
 		
 		SpectralDistribution to_return;
 		// Add some randomization to the direction vectors
@@ -690,9 +690,9 @@ SpectralDistribution Scene::traceRefractedRay(
 	else
 	{ // Brewster angle reached, complete specular reflection
 		if (inside)
-			recursive_ray.position = r.position + id.t * r.direction - offset;
+			recursive_ray.origin = r.origin + id.t * r.direction - offset;
 		else
-			recursive_ray.position = r.position + id.t * r.direction + offset;
+			recursive_ray.origin = r.origin + id.t * r.direction + offset;
 		// Add some randomization to the direction vector
 		recursive_ray.direction = perfect_reflection; // shake(perfect_reflection, id.material.polish_power);
 		// Recursively trace the reflected ray
@@ -732,9 +732,9 @@ SpectralDistribution Scene::traceRay(Ray r, int iteration)
 		if (1 - transmissivity)
 		{ // Completely or partly reflected
 			Ray recursive_ray = r;
-			// New position same in both cases, can be computed once outside
+			// New position same in both cases, can be computed once, outside
 			// of trace functions
-			recursive_ray.position = r.position + id.t * r.direction +
+			recursive_ray.origin = r.origin + id.t * r.direction +
 				(inside ? -offset : offset);
 			SpectralDistribution specular_part =
 				specularity ?
@@ -749,7 +749,7 @@ SpectralDistribution Scene::traceRay(Ray r, int iteration)
 				case CAUSTICS :
 				{
 					KDTreeNode ref_node;
-					ref_node.p.position = r.position + r.direction * id.t + offset;
+					ref_node.p.position = r.origin + r.direction * id.t + offset;
 
 					double limit = 0.01;
 
@@ -784,7 +784,7 @@ SpectralDistribution Scene::traceRay(Ray r, int iteration)
 				case PHOTON_MAPPING :
 				{
 					Photon p;
-					p.position = recursive_ray.position;
+					p.position = recursive_ray.origin;
 					p.direction_in = -r.direction;
 					p.flux[0] = 1;
 					p.flux[1] = 1;

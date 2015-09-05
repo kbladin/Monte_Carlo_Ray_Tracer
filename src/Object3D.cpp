@@ -95,11 +95,11 @@ bool Sphere::intersect(IntersectionData* id, Ray r) const
 	// if to_square is negative we have imaginary solutions,
 	// hence no intersection
 	// p_half comes from the p-q formula (p/2)
-	float p_half = glm::dot((r.position - POSITION_), r.direction);
+	float p_half = glm::dot((r.origin - POSITION_), r.direction);
 	float to_square = 
 		pow(p_half, 2) + 
 		pow(RADIUS_, 2) - 
-		pow(glm::length(r.position - POSITION_), 2);
+		pow(glm::length(r.origin - POSITION_), 2);
 	float t; // parameter that tells us where on the ray the intersection is
 	glm::vec3 n; // normal of the intersection point on the surface
 	if (to_square < 0)
@@ -115,7 +115,7 @@ bool Sphere::intersect(IntersectionData* id, Ray r) const
 			// the intersection is on the inside of the sphere
 			t = -p_half + sqrt(to_square);
 		}
-		n = r.position + t*r.direction - POSITION_;
+		n = r.origin + t*r.direction - POSITION_;
 	}
 	if (t >= 0) // t needs to be positive to travel forward on the ray
 	{
@@ -178,7 +178,7 @@ bool Plane::intersect(IntersectionData* id, Ray r) const
 		inv_det = 1.f / det;
 
 	// calculate distance from P0_ to ray origin
-	T = r.position - P0_;
+	T = r.origin - P0_;
 	Q = glm::cross(T, e1);
 
 	// Calculate u parameter and test bound
@@ -270,7 +270,7 @@ Ray LightSource::shootLightRay()
 	std::uniform_real_distribution<float> dis(0, 1);
 
 	Ray r;
-	r.position = getPointOnSurface(dis(gen), dis(gen));
+	r.origin = getPointOnSurface(dis(gen), dis(gen));
 
 	// Get a uniformly distributed vector
 	glm::vec3 normal = emitter_.getNormal();
@@ -295,6 +295,7 @@ Ray LightSource::shootLightRay()
 
 	r.direction = random_direction;
 	r.material = Material::air();
+	r.radiance = color * radiosity * glm::dot(random_direction, normal) / 400000;
 	
 	return r;
 }

@@ -11,7 +11,7 @@ bool AABB::intersect(Ray r) const
 {
 	glm::vec3 origin =
 		glm::vec3(glm::inverse(transform) *
-		glm::vec4(r.position, 1));
+		glm::vec4(r.origin, 1));
 	glm::vec3 direction =
 		glm::vec3(glm::inverse(transform) *
 		glm::vec4(r.direction, 0));
@@ -183,7 +183,7 @@ bool OctNodeAABB::intersect(IntersectionData* id, Ray r) const
 			inv_det = 1.f / det;
 
 			//calculate distance from V1 to ray origin
-			T = r.position - p0;
+			T = r.origin - p0;
 
 			//Calculate u parameter and test bound
 			u = glm::dot(T, P) * inv_det;

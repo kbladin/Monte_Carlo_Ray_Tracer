@@ -58,9 +58,10 @@ struct Material
 
 struct Ray
 {
-	glm::vec3 position;
+	glm::vec3 origin;
 	glm::vec3 direction;
 	Material material; // The material the ray is travelling in
+	SpectralDistribution radiance; // This is used only when forward tracing ray
 };
 
 struct Photon
