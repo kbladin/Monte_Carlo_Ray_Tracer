@@ -53,6 +53,7 @@ public:
 	~Sphere(){};
 
 	bool intersect(IntersectionData* id, Ray r) const;
+	glm::vec3 getPointOnSurface(float u, float v) const;
 };
 
 // P0, P1, and P2 defines a paralellogram which is the plane
@@ -89,7 +90,7 @@ public:
 	glm::vec3 	getPointOnSurface(float u, float v);
 	float 		getArea() const;
 
-	std::vector<Ray> shootLightRay();
+	Ray shootLightRay();
 
 	const float radiosity; // [Watts/m^2]
 	const SpectralDistribution color;

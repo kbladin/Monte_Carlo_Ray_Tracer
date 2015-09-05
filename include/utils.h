@@ -10,6 +10,8 @@ public:
 	SpectralDistribution();
 	~SpectralDistribution(){};
 
+	float power() const;
+
 	// Various operators for SpectralDistribution
 	friend std::ostream& operator<<(
 		std::ostream& os,
@@ -64,7 +66,25 @@ struct Ray
 struct Photon
 {
 	glm::vec3 position;
-	SpectralDistribution radiance;
+	glm::vec3 direction_in;
+	SpectralDistribution flux;
+};
+
+struct KDTreeNode
+{
+	typedef double value_type;
+	Photon p;
+	size_t index;
+
+	value_type operator[](size_t n) const
+	{
+		return p.position[n];
+	}
+
+	double distance( const KDTreeNode &node)
+	{
+		return glm::length(node.p.position - p.position);
+	}
 };
 
 struct IntersectionData

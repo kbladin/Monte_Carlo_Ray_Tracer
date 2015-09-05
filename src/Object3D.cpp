@@ -127,6 +127,25 @@ bool Sphere::intersect(IntersectionData* id, Ray r) const
 	return false;
 }
 
+glm::vec3 Sphere::getPointOnSurface(float u, float v) const
+{
+	// Uniform over a sphere
+	float inclination = glm::acos(1 - 2 * u);
+	float azimuth = 2 * M_PI * v;
+
+	glm::vec3 random_direction = glm::vec3(1,0,0);
+	random_direction = glm::normalize(glm::rotate(
+		random_direction,
+		inclination,
+		glm::vec3(0,1,0)));
+	random_direction = glm::normalize(glm::rotate(
+		random_direction,
+		azimuth,
+		glm::vec3(1,0,0)));
+
+	return POSITION_ + random_direction * RADIUS_;
+}
+
 // --- Plane class functions --- //
 
 Plane::Plane(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, Material* material) : 
@@ -243,17 +262,15 @@ float LightSource::getArea() const
 	return emitter_.getArea();
 }
 
-std::vector<Ray> LightSource::shootLightRay()
+Ray LightSource::shootLightRay()
 {
-	std::vector<Ray> rays;
-
 	// Move random code out later
 	std::random_device rd;
 	std::mt19937 gen(rd());
 	std::uniform_real_distribution<float> dis(0, 1);
 
-	Ray first;
-	first.position = getPointOnSurface(dis(gen), dis(gen));
+	Ray r;
+	r.position = getPointOnSurface(dis(gen), dis(gen));
 
 	// Get a uniformly distributed vector
 	glm::vec3 normal = emitter_.getNormal();
@@ -276,8 +293,8 @@ std::vector<Ray> LightSource::shootLightRay()
 		azimuth,
 		normal));
 
-	first.direction = random_direction;
-	first.material = Material::air();
+	r.direction = random_direction;
+	r.material = Material::air();
 	
-	return rays;
+	return r;
 }

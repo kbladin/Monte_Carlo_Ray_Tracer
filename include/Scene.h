@@ -9,10 +9,13 @@
 
 #include "utils.h"
 #include "Object3D.h"
+#include "../external_libraries/common_include/kdtree++/kdtree.hpp"
 
 class Scene
 {
 private:
+	int render_mode_;
+
 	std::random_device rd_;
 	std::mt19937* gen_;
 	std::uniform_real_distribution<float>* dis_;
@@ -20,6 +23,8 @@ private:
 	std::vector<Object3D*> objects_;
 	std::vector<LightSource*> lamps_;
 	std::map<std::string, Material*> materials_;
+
+	KDTree::KDTree<3, KDTreeNode> photon_map_;
 
 	friend struct scene_traverser;
 	
@@ -103,8 +108,15 @@ private:
 public:
 	Scene(const char* file_path);
 	~Scene();
+	
+	enum RenderMode{
+	  PHOTON_MAPPING, CAUSTICS, WHITTED_SPECULAR, MONTE_CARLO,
+	};
+	
+	void setRenderMode(int render_mode);
 
-	SpectralDistribution traceRay(Ray r, int iteration);
+	SpectralDistribution traceRay(Ray r, int iteration = 0);
+	void buildPhotonMap(const int n_photons);
 };
 
 #endif // SCENE_H

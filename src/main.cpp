@@ -40,7 +40,9 @@ int main(int argc, char const *argv[])
 
 	static const int WIDTH = 1024 / 4;
 	static const int HEIGHT = 768 / 4;
-	static const int SUB_SAMPLING = 1;
+	static const int SUB_SAMPLING_CAUSTICS = 1;
+	static const int SUB_SAMPLING_MONTE_CARLO = 1;
+	static const int SUB_SAMPLING_WHITTED_SPECULAR = 1;
 	
 	// The camera is used to cast appropriate initial rays
 	Camera c(
@@ -70,6 +72,11 @@ int main(int argc, char const *argv[])
 	std::cout << "Rendering started!" << std::endl;
 	std::cout << percent_finished << " \% finished." << std::endl;
 
+	std::cout << "Building photon map." << std::endl;
+	s.buildPhotonMap(400000);
+/*
+	s.setRenderMode(Scene::WHITTED_SPECULAR);
+	std::cout << "Rendering specular and direct light." << std::endl;
 	// Loop through all pixels to calculate their radiance_values by ray-tracing
 	for (int x = 0; x < c.WIDTH; ++x)
 	{
@@ -79,16 +86,67 @@ int main(int argc, char const *argv[])
 		{
 			int index = (x + y * c.WIDTH);
 			SpectralDistribution sd;
-			for (int i = 0; i < SUB_SAMPLING; ++i)
+			for (int i = 0; i < SUB_SAMPLING_WHITTED_SPECULAR; ++i)
 			{
 				Ray r = c.castRay(
 					x, // Pixel x
 					(c.HEIGHT - y - 1), // Pixel y 
 					dis(gen), // Parameter x (>= -0.5 and < 0.5), for subsampling
 					dis(gen)); // Parameter y (>= -0.5 and < 0.5), for subsampling
-				sd += s.traceRay(r, 0);
+				sd += s.traceRay(r);
 			}
-			radiance_values[index] = sd / SUB_SAMPLING;
+			radiance_values[index] = sd / SUB_SAMPLING_WHITTED_SPECULAR;
+		}
+	}
+*/
+	
+	s.setRenderMode(Scene::CAUSTICS);
+	std::cout << "Rendering caustics light." << std::endl;
+	// Loop through all pixels to calculate their radiance_values by ray-tracing
+	for (int x = 0; x < c.WIDTH; ++x)
+	{
+		// Parallellize the for loop with openMP.
+		#pragma omp parallel for
+		for (int y = 0; y < c.HEIGHT; ++y)
+		{
+			int index = (x + y * c.WIDTH);
+			SpectralDistribution sd;
+			for (int i = 0; i < SUB_SAMPLING_CAUSTICS; ++i)
+			{
+				Ray r = c.castRay(
+					x, // Pixel x
+					(c.HEIGHT - y - 1), // Pixel y 
+					dis(gen), // Parameter x (>= -0.5 and < 0.5), for subsampling
+					dis(gen)); // Parameter y (>= -0.5 and < 0.5), for subsampling
+				sd += s.traceRay(r);
+			}
+			radiance_values[index] += sd / SUB_SAMPLING_CAUSTICS;
+		}
+	}
+
+
+	/*7
+	s.setRenderMode(Scene::MONTE_CARLO);
+	std::cout << "Rendering diffuse light." << std::endl;
+	// Loop through all pixels to calculate their radiance_values by ray-tracing
+	for (int x = 0; x < c.WIDTH; ++x)
+	{
+		// Parallellize the for loop with openMP.
+		#pragma omp parallel for
+		for (int y = 0; y < c.HEIGHT; ++y)
+		{
+			int index = (x + y * c.WIDTH);
+			SpectralDistribution sd;
+			for (int i = 0; i < SUB_SAMPLING_MONTE_CARLO; ++i)
+			{
+				Ray r = c.castRay(
+					x, // Pixel x
+					(c.HEIGHT - y - 1), // Pixel y 
+					dis(gen), // Parameter x (>= -0.5 and < 0.5), for subsampling
+					dis(gen)); // Parameter y (>= -0.5 and < 0.5), for subsampling
+				sd += s.traceRay(r);
+			}
+			radiance_values[index] += sd / SUB_SAMPLING_MONTE_CARLO;
 		}
 
 		// To show how much time we have left.
@@ -107,7 +165,7 @@ int main(int argc, char const *argv[])
 			<< minutes << "m:"
 			<< seconds << "s." << std::endl;
 	}
-
+*/
 	// To show how much time it actually took to render.
 	time(&time_now);
 	double time_elapsed = difftime(time_now, time_start);

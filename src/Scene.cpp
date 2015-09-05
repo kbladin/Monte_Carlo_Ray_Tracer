@@ -56,6 +56,11 @@ Scene::~Scene()
 	}
 }
 
+void Scene::setRenderMode(int render_mode)
+{
+	render_mode_ = render_mode;
+}
+
 bool Scene::intersect(IntersectionData* id, Ray r)
 {
 	IntersectionData id_smallest_t;
@@ -360,15 +365,113 @@ std::vector<std::pair< Ray, IntersectionData > > Scene::forwardTraceRefractedRay
 */
 
 /*
+
+Photon Scene::traceSpecularPhoton(
+	Ray r,
+	IntersectionData id,
+	int iteration)
+{
+	Photon to_return;
+	if (!(iteration >= 5)) // Do not end here
+	{		
+		// Add some randomization to the direction vector
+		r.direction = glm::reflect(r.direction, id.normal);// shake(perfect_reflection, id.material.polish_power);
+		to_return.position = r.position + id.t * r.direction;
+		// Recursively trace the reflected ray
+		to_return = tracePhoton(r, iteration + 1);
+		to_return.radiance = id.material.color_specular * to_return.radiance;
+	}
+	return to_return;
+}
+
+Photon Scene::traceRefractedPhoton(
+	Ray r,
+	IntersectionData id,
+	int iteration,
+	glm::vec3 offset,
+	bool inside)
+{
+	Photon to_return;
+	if (iteration >= 5)
+		return to_return;
+	
+	Ray recursive_ray = r;
+
+	glm::vec3 normal = inside ? -id.normal : id.normal;
+	glm::vec3 perfect_refraction = glm::refract(
+		r.direction,
+		normal,
+		r.material.refraction_index / id.material.refraction_index);
+	glm::vec3 perfect_reflection = glm::reflect(r.direction, id.normal);
+	if (perfect_refraction != glm::vec3(0))
+	{ // Refraction and reflection
+		// Schlicks approximation to Fresnels equations.
+		float n1 = r.material.refraction_index;
+		float n2 = id.material.refraction_index;
+		float R_0 = pow((n1 - n2)/(n1 + n2), 2);
+		float R = R_0 + (1 - R_0) * pow(1 - glm::dot(normal, -r.direction),5);
+
+		Ray recursive_ray_reflected = recursive_ray;
+		Ray recursive_ray_refracted = recursive_ray;
+
+		if (inside)
+			offset = -offset;
+		
+		// Reflected ray
+		// Change the material the ray is travelling in
+		recursive_ray_reflected.material = Material::air();
+		recursive_ray_reflected.position = r.position + id.t * r.direction +offset;
+		// Refracted ray
+		// Change the material the ray is travelling in
+		recursive_ray_refracted.material = id.material;
+		recursive_ray_refracted.position = r.position + id.t * r.direction -offset;
+		
+		SpectralDistribution to_return;
+		// Add some randomization to the direction vectors
+		recursive_ray_reflected.direction = perfect_reflection; // shake(perfect_reflection, id.material.polish_power);
+		recursive_ray_refracted.direction = perfect_refraction; // shake(perfect_refraction, id.material.clearness_power);
+
+		// To decide if the photon is reflected or refracted
+		float random = (*dis_)(*gen_);
+		// Recursively trace the refracted rays
+		if (random < R)
+		{
+			to_return = tracePhoton(recursive_ray_reflected, iteration + 1);
+			to_return.radiance = to_return.radiance * id.material.color_specular;
+		}
+		else {
+			tracePhoton(recursive_ray_refracted, iteration + 1) * id.material.color_diffuse;
+		}
+		//Photon reflected_part = tracePhoton(recursive_ray_reflected, iteration + 1) * id.material.color_specular * R;
+		//Photon refracted_part = tracePhoton(recursive_ray_refracted, iteration + 1) * (1 - R) * id.material.color_diffuse;
+		return reflected_part + refracted_part;
+	}
+	else
+	{ // Brewster angle reached, complete specular reflection
+		if (inside)
+			recursive_ray.position = r.position + id.t * r.direction - offset;
+		else
+			recursive_ray.position = r.position + id.t * r.direction + offset;
+		// Add some randomization to the direction vector
+		recursive_ray.direction = perfect_reflection; // shake(perfect_reflection, id.material.polish_power);
+		// Recursively trace the reflected ray
+		to_return = tracePhoton(recursive_ray, iteration + 1);
+		to_return.radiance = to_return.radiance * id.material.color_specular;
+	}
+	return to_return;
+}
+
 Photon Scene::tracePhoton(Ray r, int iteration)
 {
 	IntersectionData id;
 	LightSourceIntersectionData lamp_id;
+	
 	if (intersectLamp(&lamp_id, r)){ // Ray hitted light source
 		Photon to_return;
 		to_return.position = r.position + r.direction * lamp_id.t;
 		r.t * lamp_id.radiosity;
 	}
+	
 	if (intersect(&id, r))
 	{ // Ray hit another object
 		// To make sure it does not intersect with itself again
@@ -391,14 +494,14 @@ Photon Scene::tracePhoton(Ray r, int iteration)
 				(inside ? -offset : offset);
 			SpectralDistribution specular_part =
 				specularity ?
-					traceSpecularRay(
+					traceSpecularPhoton(
 						recursive_ray,
 						id,
 						iteration) * specularity :
 					SpectralDistribution();
 			SpectralDistribution diffuse_part =
 				(1 - specularity) ?
-					traceDiffuseRay(
+					traceDiffusePhoton(
 						recursive_ray,
 						id,
 						iteration) * (1 - specularity) :
@@ -418,6 +521,7 @@ Photon Scene::tracePhoton(Ray r, int iteration)
 	}
 	return SpectralDistribution();
 }
+
 */
 
 SpectralDistribution Scene::traceDiffuseRay(
@@ -439,7 +543,7 @@ SpectralDistribution Scene::traceLocalDiffuseRay(
 {
 	SpectralDistribution L_local;
 	// Cast shadow rays
-	// We devide up the area light source in to n_samples area parts.
+	// We divide up the area light source in to n_samples area parts.
 	// Used to define the solid angle
 	static const int n_samples = 10;
 	for (int i = 0; i < lamps_.size(); ++i)
@@ -513,8 +617,7 @@ SpectralDistribution Scene::traceIndirectDiffuseRay(
 
 		L_indirect += traceRay(r, iteration + 1) * brdf * cos_angle / estimator * id.material.color_diffuse;
 	}
-	return (L_indirect[0] < 1 && L_indirect[1] < 1 && L_indirect[2] < 2 ) ? L_indirect / n_samples : SpectralDistribution();
-	//return L_indirect / n_samples;
+	return L_indirect / n_samples;
 }
 
 SpectralDistribution Scene::traceSpecularRay(
@@ -601,8 +704,18 @@ SpectralDistribution Scene::traceRay(Ray r, int iteration)
 {
 	IntersectionData id;
 	LightSourceIntersectionData lamp_id;
+	//std::cout << "render_mode_ = " << render_mode_ << std::endl;
+
 	if (intersectLamp(&lamp_id, r)) // Ray hitted light source
-		return lamp_id.color * lamp_id.radiosity;
+		
+
+		switch (render_mode_)
+		{
+			case WHITTED_SPECULAR :
+				return lamp_id.color * lamp_id.radiosity;
+			default :
+				return SpectralDistribution();
+		}
 	else if (intersect(&id, r))
 	{ // Ray hit another object
 		// To make sure it does not intersect with itself again
@@ -630,13 +743,74 @@ SpectralDistribution Scene::traceRay(Ray r, int iteration)
 						id,
 						iteration) * specularity :
 					SpectralDistribution();
-			SpectralDistribution diffuse_part =
-				(1 - specularity) ?
-					traceDiffuseRay(
-						recursive_ray,
-						id,
-						iteration) * (1 - specularity) :
-					SpectralDistribution();
+			SpectralDistribution diffuse_part;
+			switch (render_mode_)
+			{
+				case CAUSTICS :
+				{
+					KDTreeNode ref_node;
+					ref_node.p.position = r.position + r.direction * id.t + offset;
+
+					double limit = 0.01;
+
+					std::vector<KDTreeNode> howClose;
+					photon_map_.find_within_range(ref_node,limit,std::back_insert_iterator<std::vector<KDTreeNode> >(howClose));
+					
+		
+					diffuse_part[0] = howClose.size() * 0.05;
+					diffuse_part[1] = howClose.size() * 0.05;
+					diffuse_part[2] = howClose.size() * 0.05;
+
+					diffuse_part = diffuse_part * id.material.color_diffuse;
+					
+					break;
+				}
+				case WHITTED_SPECULAR :
+				{
+					diffuse_part = SpectralDistribution();
+					break;
+				}
+				case MONTE_CARLO :
+				{
+					diffuse_part =
+						(1 - specularity) ?
+							traceDiffuseRay(
+								recursive_ray,
+								id,
+								iteration) * (1 - specularity) :
+							SpectralDistribution();
+					break;
+				}
+				case PHOTON_MAPPING :
+				{
+					Photon p;
+					p.position = recursive_ray.position;
+					p.direction_in = -r.direction;
+					p.flux[0] = 1;
+					p.flux[1] = 1;
+					p.flux[2] = 1;
+
+					KDTreeNode to_insert;
+					to_insert.p = p;
+
+					photon_map_.insert(to_insert);
+
+					diffuse_part = 
+						(1 - specularity) ?
+							traceDiffuseRay(
+								recursive_ray,
+								id,
+								iteration) * (1 - specularity) :
+							SpectralDistribution();
+					break;
+				}
+				default :
+				{
+					diffuse_part = SpectralDistribution();
+					break;
+				}
+			}
+
 			total +=
 				(specular_part + diffuse_part) *
 				(1 - transmissivity) *
@@ -651,4 +825,54 @@ SpectralDistribution Scene::traceRay(Ray r, int iteration)
 		return total;
 	}
 	return SpectralDistribution();
+}
+
+void Scene::buildPhotonMap(const int n_photons)
+{
+	setRenderMode(PHOTON_MAPPING);
+	float total_radiance = 0;
+	for (int i = 0; i < lamps_.size(); ++i)
+	{
+		total_radiance +=
+			lamps_[i]->radiosity *
+			lamps_[i]->color.power() *
+			lamps_[i]->getArea();
+	}
+	float random = (*dis_)(*gen_);
+
+	int picked_light_source = 0;
+	float accumulating_chance = 0;
+	for (int i = 0; i < lamps_.size(); ++i)
+	{
+		float interval =
+			(lamps_[i]->radiosity *
+			lamps_[i]->color.power() *
+			lamps_[i]->getArea()) / total_radiance;
+		if (random > accumulating_chance && random < accumulating_chance + interval)
+		{ // This lamp got picked
+			picked_light_source = i;
+			break;
+		}
+		else
+			accumulating_chance += interval; 
+	}
+
+	#pragma omp parallel for
+	for (int i = 0; i < n_photons; ++i)
+	{
+		// Should actually only shoot towards reftactive and reflective objects!
+		Ray r = lamps_[picked_light_source]->shootLightRay();
+		/*r.position = lamps_[picked_light_source]->getPointOnSurface((*dis_)(*gen_), (*dis_)(*gen_)) + glm::vec3(0,-0.0001,0);
+		Sphere* s = NULL;
+		for (int j = 0; j < objects_.size(); ++j)
+		{
+			s = dynamic_cast<Sphere*> (objects_[j]);
+			if (s && s->material().transmissivity) // Pick the first transmissive sphere
+				break;
+		}
+		r.direction = glm::normalize(s->getPointOnSurface((*dis_)(*gen_), (*dis_)(*gen_)) - r.position);
+		r.material = Material::air();
+		*/traceRay(r);
+	}
+	photon_map_.optimize();
 }

@@ -11,6 +11,16 @@ SpectralDistribution::SpectralDistribution()
 	}
 }
 
+float SpectralDistribution::power() const
+{
+	float sum = 0;
+	for (int i = 0; i < N_WAVELENGTHS; ++i)
+	{
+		sum += data[i];
+	}
+	return sum;
+}
+
 std::ostream& operator<<(std::ostream& os, const SpectralDistribution& sd)
 {
 	os << "[ ";
