@@ -529,6 +529,7 @@ SpectralDistribution Scene::traceDiffuseRay(
 	IntersectionData id,
 	int iteration)
 {
+	r.has_intersected = true;
 	// Start by adding the local illumination part (shadow rays)
 	SpectralDistribution total_diffuse = traceLocalDiffuseRay(r, id);
 	if (!(iteration >= 2)) // Do not end here
@@ -614,6 +615,7 @@ SpectralDistribution Scene::traceIndirectDiffuseRay(
 		float estimator = cos_angle / M_PI;// 1 / (2 * M_PI);
 
 		r.direction = random_direction;
+		r.radiance *= brdf * cos_angle / estimator * id.material.color_diffuse;
 
 		L_indirect += traceRay(r, iteration + 1) * brdf * cos_angle / estimator * id.material.color_diffuse;
 	}
@@ -625,11 +627,13 @@ SpectralDistribution Scene::traceSpecularRay(
 	IntersectionData id,
 	int iteration)
 {
+	r.has_intersected = true;
 	SpectralDistribution specular = SpectralDistribution();
 	if (!(iteration >= 5)) // Do not end here
 	{		
 		// Add some randomization to the direction vector
 		r.direction = glm::reflect(r.direction, id.normal);// shake(perfect_reflection, id.material.polish_power);
+		r.radiance *= id.material.color_specular;
 		// Recursively trace the reflected ray
 		specular += traceRay(r, iteration + 1) * id.material.color_specular;
 	}
@@ -647,6 +651,7 @@ SpectralDistribution Scene::traceRefractedRay(
 		return SpectralDistribution();
 	
 	Ray recursive_ray = r;
+	recursive_ray.has_intersected = true;
 
 	glm::vec3 normal = inside ? -id.normal : id.normal;
 	glm::vec3 perfect_refraction = glm::refract(
@@ -682,6 +687,9 @@ SpectralDistribution Scene::traceRefractedRay(
 		recursive_ray_reflected.direction = perfect_reflection; // shake(perfect_reflection, id.material.polish_power);
 		recursive_ray_refracted.direction = perfect_refraction; // shake(perfect_refraction, id.material.clearness_power);
 
+		recursive_ray_reflected.radiance *= id.material.color_specular * R;
+		recursive_ray_refracted.radiance *= (1 - R) * id.material.color_diffuse;
+
 		// Recursively trace the refracted rays
 		SpectralDistribution reflected_part = traceRay(recursive_ray_reflected, iteration + 1) * id.material.color_specular * R;
 		SpectralDistribution refracted_part= traceRay(recursive_ray_refracted, iteration + 1) * (1 - R) * id.material.color_diffuse;
@@ -695,6 +703,7 @@ SpectralDistribution Scene::traceRefractedRay(
 			recursive_ray.origin = r.origin + id.t * r.direction + offset;
 		// Add some randomization to the direction vector
 		recursive_ray.direction = perfect_reflection; // shake(perfect_reflection, id.material.polish_power);
+		recursive_ray.radiance *= id.material.color_specular;
 		// Recursively trace the reflected ray
 		return traceRay(recursive_ray, iteration + 1) * id.material.color_specular;
 	}
@@ -753,16 +762,17 @@ SpectralDistribution Scene::traceRay(Ray r, int iteration)
 
 					double limit = 0.01;
 
-					std::vector<KDTreeNode> howClose;
-					photon_map_.find_within_range(ref_node,limit,std::back_insert_iterator<std::vector<KDTreeNode> >(howClose));
+					std::vector<KDTreeNode> closest_photons;
+					photon_map_.find_within_range(ref_node,limit,std::back_insert_iterator<std::vector<KDTreeNode> >(closest_photons));
 					
-		
-					diffuse_part[0] = howClose.size() * 0.05;
-					diffuse_part[1] = howClose.size() * 0.05;
-					diffuse_part[2] = howClose.size() * 0.05;
+					SpectralDistribution photon_radiance;
+					for (int i = 0; i < closest_photons.size(); ++i)
+					{
+						float distance = glm::length(closest_photons[i].p.position - ref_node.p.position);
+						photon_radiance += (glm::cos(distance * M_PI * 1/limit) + 1)/2 * 1/limit * id.material.color_diffuse * closest_photons[i].p.flux;
+					}
 
-					diffuse_part = diffuse_part * id.material.color_diffuse;
-					
+					diffuse_part = photon_radiance;
 					break;
 				}
 				case WHITTED_SPECULAR :
@@ -783,18 +793,21 @@ SpectralDistribution Scene::traceRay(Ray r, int iteration)
 				}
 				case PHOTON_MAPPING :
 				{
-					Photon p;
-					p.position = recursive_ray.origin;
-					p.direction_in = -r.direction;
-					p.flux[0] = 1;
-					p.flux[1] = 1;
-					p.flux[2] = 1;
 
-					KDTreeNode to_insert;
-					to_insert.p = p;
+					if (r.has_intersected)
+					{
+						Photon p;
+						p.position = recursive_ray.origin;
+						p.direction_in = -r.direction;
+						p.flux = recursive_ray.radiance * 2 * M_PI;
 
-					photon_map_.insert(to_insert);
+						KDTreeNode to_insert;
+						to_insert.p = p;
 
+						photon_map_.insert(to_insert);
+					}
+
+/*
 					diffuse_part = 
 						(1 - specularity) ?
 							traceDiffuseRay(
@@ -802,6 +815,8 @@ SpectralDistribution Scene::traceRay(Ray r, int iteration)
 								id,
 								iteration) * (1 - specularity) :
 							SpectralDistribution();
+							*/
+
 					break;
 				}
 				default :
@@ -857,12 +872,16 @@ void Scene::buildPhotonMap(const int n_photons)
 			accumulating_chance += interval; 
 	}
 
-	#pragma omp parallel for
-	for (int i = 0; i < n_photons; ++i)
+	for (int k = 0; k < 100; ++k)
 	{
+		#pragma omp parallel for
+		for (int i = 0; i < n_photons / 100; ++i)
+		{
 		// Should actually only shoot towards reftactive and reflective objects!
 		Ray r = lamps_[picked_light_source]->shootLightRay();
-		/*r.position = lamps_[picked_light_source]->getPointOnSurface((*dis_)(*gen_), (*dis_)(*gen_)) + glm::vec3(0,-0.0001,0);
+		r.has_intersected = false;
+		r.radiance = lamps_[picked_light_source]->color * total_radiance / n_photons;
+		/*r.origin = lamps_[picked_light_source]->getPointOnSurface((*dis_)(*gen_), (*dis_)(*gen_)) + glm::vec3(0,-0.0001,0);
 		Sphere* s = NULL;
 		for (int j = 0; j < objects_.size(); ++j)
 		{
@@ -870,9 +889,13 @@ void Scene::buildPhotonMap(const int n_photons)
 			if (s && s->material().transmissivity) // Pick the first transmissive sphere
 				break;
 		}
-		r.direction = glm::normalize(s->getPointOnSurface((*dis_)(*gen_), (*dis_)(*gen_)) - r.position);
+		r.direction = glm::normalize(s->getPointOnSurface((*dis_)(*gen_), (*dis_)(*gen_)) - r.origin);
 		r.material = Material::air();
-		*/traceRay(r);
+		*/
+		traceRay(r);
+		}
+		std::cout << k << "\% of photon map finished." << std::endl;
 	}
+	std::cout << "Optimizing kd tree" << std::endl;
 	photon_map_.optimize();
 }

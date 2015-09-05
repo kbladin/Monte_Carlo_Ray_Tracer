@@ -28,7 +28,9 @@ public:
 	SpectralDistribution operator*(const SpectralDistribution& sd) const;
 	SpectralDistribution operator+=(const SpectralDistribution& sd);
 	SpectralDistribution operator-=(const SpectralDistribution& sd);
+	SpectralDistribution operator*=(const SpectralDistribution& sd);
 	SpectralDistribution operator/=(const float& f);
+	SpectralDistribution operator*=(const float& f);
 
 	// Currently not used as wavelengths. We only care about three channels,
 	// (hence three wavelengths) r, g, b. These would not correspond to real
@@ -62,6 +64,7 @@ struct Ray
 	glm::vec3 direction;
 	Material material; // The material the ray is travelling in
 	SpectralDistribution radiance; // This is used only when forward tracing ray
+	bool has_intersected;
 };
 
 struct Photon

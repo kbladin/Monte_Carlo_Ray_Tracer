@@ -38,11 +38,11 @@ int main(int argc, char const *argv[])
 	time_t time_start, time_now, rendertime_start;
 	time(&time_start);
 
-	static const int WIDTH = 1024 / 4;
-	static const int HEIGHT = 768 / 4;
+	static const int WIDTH = 1024 / 0.5;
+	static const int HEIGHT = 768 / 0.5;
 	static const int SUB_SAMPLING_CAUSTICS = 1;
-	static const int SUB_SAMPLING_MONTE_CARLO = 1;
-	static const int SUB_SAMPLING_WHITTED_SPECULAR = 1;
+	static const int SUB_SAMPLING_MONTE_CARLO = 5;
+	static const int SUB_SAMPLING_WHITTED_SPECULAR = 5;
 	
 	// The camera is used to cast appropriate initial rays
 	Camera c(
@@ -73,7 +73,7 @@ int main(int argc, char const *argv[])
 	std::cout << percent_finished << " \% finished." << std::endl;
 
 	std::cout << "Building photon map." << std::endl;
-	s.buildPhotonMap(400000);
+	s.buildPhotonMap(500000);
 /*
 	s.setRenderMode(Scene::WHITTED_SPECULAR);
 	std::cout << "Rendering specular and direct light." << std::endl;
@@ -98,8 +98,7 @@ int main(int argc, char const *argv[])
 			radiance_values[index] = sd / SUB_SAMPLING_WHITTED_SPECULAR;
 		}
 	}
-*/
-	
+	*/
 	s.setRenderMode(Scene::CAUSTICS);
 	std::cout << "Rendering caustics light." << std::endl;
 	// Loop through all pixels to calculate their radiance_values by ray-tracing
@@ -122,10 +121,12 @@ int main(int argc, char const *argv[])
 			}
 			radiance_values[index] += sd / SUB_SAMPLING_CAUSTICS;
 		}
+
+		percent_finished = (x+1) * 100 / float(c.WIDTH);
+		std::cout << percent_finished << " \% finished." << std::endl;
+		
 	}
-
-
-	/*
+/*
 	s.setRenderMode(Scene::MONTE_CARLO);
 	std::cout << "Rendering diffuse light." << std::endl;
 	// Loop through all pixels to calculate their radiance_values by ray-tracing
@@ -165,7 +166,8 @@ int main(int argc, char const *argv[])
 			<< minutes << "m:"
 			<< seconds << "s." << std::endl;
 	}
-*/
+	*/
+
 	// To show how much time it actually took to render.
 	time(&time_now);
 	double time_elapsed = difftime(time_now, time_start);

@@ -121,11 +121,30 @@ SpectralDistribution SpectralDistribution::operator-=(const SpectralDistribution
 	return *this;
 }
 
+SpectralDistribution SpectralDistribution::operator*=(const SpectralDistribution& sd)
+{
+	for (int i = 0; i < N_WAVELENGTHS; ++i)
+	{
+		data[i] = data[i] * sd.data[i];
+	}
+	return *this;
+}
+
+
 SpectralDistribution SpectralDistribution::operator/=(const float& f)
 {
 	for (int i = 0; i < N_WAVELENGTHS; ++i)
 	{
 		data[i] = data[i] / f;
+	}
+	return *this;
+}
+
+SpectralDistribution SpectralDistribution::operator*=(const float& f)
+{
+	for (int i = 0; i < N_WAVELENGTHS; ++i)
+	{
+		data[i] = data[i] * f;
 	}
 	return *this;
 }
