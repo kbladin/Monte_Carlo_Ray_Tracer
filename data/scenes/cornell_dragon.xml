@@ -65,7 +65,7 @@
 	</object3D>
 
 	<!-- Light source -->
-	<light_source type="lamp_plane" emittance="3">
+	<light_source type="lamp_plane" emittance="150">
 		<P0 x="-0.3" y="0.9999" z="0.7" />
 		<P1 x="0.3"  y="0.9999" z="0.7" />
 		<P2 x="-0.3" y="0.9999" z="1.3" />
@@ -73,7 +73,7 @@
 	</light_source>
 
 	<!-- Objects in scene -->
-	<object3D type="mesh" material_id="diffuse_cyan" file_path="../data/meshes/dragon.obj">
+	<object3D type="mesh" material_id="glass" file_path="../data/meshes/dragon.obj">
 		<transform type="scale">
 			<v x="1.2" y="1.2" z="1.2"/>
 		</transform>

@@ -38,11 +38,11 @@ int main(int argc, char const *argv[])
 	time_t time_start, time_now, rendertime_start;
 	time(&time_start);
 
-	static const int WIDTH = 1024 / 0.5;
-	static const int HEIGHT = 768 / 0.5;
+	static const int WIDTH = 1024 / 4;
+	static const int HEIGHT = 768 / 4;
 	static const int SUB_SAMPLING_CAUSTICS = 1;
-	static const int SUB_SAMPLING_MONTE_CARLO = 5;
-	static const int SUB_SAMPLING_WHITTED_SPECULAR = 5;
+	static const int SUB_SAMPLING_MONTE_CARLO = 1;
+	static const int SUB_SAMPLING_WHITTED_SPECULAR = 1;
 	
 	// The camera is used to cast appropriate initial rays
 	Camera c(
@@ -66,17 +66,17 @@ int main(int argc, char const *argv[])
 	std::mt19937 gen(rd());
 	std::uniform_real_distribution<float> dis(-0.5, 0.5);
 
-	time(&rendertime_start);
-
-	float percent_finished = 0;
-	std::cout << "Rendering started!" << std::endl;
-	std::cout << percent_finished << " \% finished." << std::endl;
-
 	std::cout << "Building photon map." << std::endl;
 	s.buildPhotonMap(500000);
-/*
-	s.setRenderMode(Scene::WHITTED_SPECULAR);
-	std::cout << "Rendering specular and direct light." << std::endl;
+
+	float rendering_percent_finished = 0;
+	std::cout << "Rendering started!" << std::endl;
+	std::cout << rendering_percent_finished << " \% finished." << std::endl;
+
+	time(&rendertime_start);
+
+	double prerender_time = difftime(rendertime_start, time_start);
+
 	// Loop through all pixels to calculate their radiance_values by ray-tracing
 	for (int x = 0; x < c.WIDTH; ++x)
 	{
@@ -93,23 +93,10 @@ int main(int argc, char const *argv[])
 					(c.HEIGHT - y - 1), // Pixel y 
 					dis(gen), // Parameter x (>= -0.5 and < 0.5), for subsampling
 					dis(gen)); // Parameter y (>= -0.5 and < 0.5), for subsampling
-				sd += s.traceRay(r);
+				sd += s.traceRay(r, Scene::WHITTED_SPECULAR);
 			}
 			radiance_values[index] = sd / SUB_SAMPLING_WHITTED_SPECULAR;
-		}
-	}
-	*/
-	s.setRenderMode(Scene::CAUSTICS);
-	std::cout << "Rendering caustics light." << std::endl;
-	// Loop through all pixels to calculate their radiance_values by ray-tracing
-	for (int x = 0; x < c.WIDTH; ++x)
-	{
-		// Parallellize the for loop with openMP.
-		#pragma omp parallel for
-		for (int y = 0; y < c.HEIGHT; ++y)
-		{
-			int index = (x + y * c.WIDTH);
-			SpectralDistribution sd;
+
 			for (int i = 0; i < SUB_SAMPLING_CAUSTICS; ++i)
 			{
 				Ray r = c.castRay(
@@ -117,27 +104,10 @@ int main(int argc, char const *argv[])
 					(c.HEIGHT - y - 1), // Pixel y 
 					dis(gen), // Parameter x (>= -0.5 and < 0.5), for subsampling
 					dis(gen)); // Parameter y (>= -0.5 and < 0.5), for subsampling
-				sd += s.traceRay(r);
+				sd += s.traceRay(r, Scene::CAUSTICS);
 			}
 			radiance_values[index] += sd / SUB_SAMPLING_CAUSTICS;
-		}
 
-		percent_finished = (x+1) * 100 / float(c.WIDTH);
-		std::cout << percent_finished << " \% finished." << std::endl;
-		
-	}
-/*
-	s.setRenderMode(Scene::MONTE_CARLO);
-	std::cout << "Rendering diffuse light." << std::endl;
-	// Loop through all pixels to calculate their radiance_values by ray-tracing
-	for (int x = 0; x < c.WIDTH; ++x)
-	{
-		// Parallellize the for loop with openMP.
-		#pragma omp parallel for
-		for (int y = 0; y < c.HEIGHT; ++y)
-		{
-			int index = (x + y * c.WIDTH);
-			SpectralDistribution sd;
 			for (int i = 0; i < SUB_SAMPLING_MONTE_CARLO; ++i)
 			{
 				Ray r = c.castRay(
@@ -145,28 +115,32 @@ int main(int argc, char const *argv[])
 					(c.HEIGHT - y - 1), // Pixel y 
 					dis(gen), // Parameter x (>= -0.5 and < 0.5), for subsampling
 					dis(gen)); // Parameter y (>= -0.5 and < 0.5), for subsampling
-				sd += s.traceRay(r);
+				sd += s.traceRay(r, Scene::MONTE_CARLO);
 			}
 			radiance_values[index] += sd / SUB_SAMPLING_MONTE_CARLO;
 		}
 
 		// To show how much time we have left.
-		percent_finished = (x+1) * 100 / float(c.WIDTH);
+		rendering_percent_finished = (x+1) * 100 / float(c.WIDTH);
 	  	time(&time_now);
-		double time_elapsed = difftime(time_now, rendertime_start);
-		double time_left = (time_elapsed / percent_finished) *
-			(100 - percent_finished);
-		int hours = time_left / (60 * 60);
-		int minutes = (int(time_left) % (60 * 60)) / 60;
-		int seconds = int(time_left) % 60;
+		double rendering_time_elapsed = difftime(time_now, rendertime_start);
+		double rendering_time_left = (rendering_time_elapsed / rendering_percent_finished) *
+			(100 - rendering_percent_finished);
 
-		std::cout << percent_finished << " \% finished." << std::endl;
+		double total_time_elapsed = prerender_time + rendering_time_elapsed;
+		double total_time_estimate = total_time_elapsed + rendering_time_left;
+		double total_time_left = total_time_estimate - total_time_elapsed;
+
+		int hours = total_time_left / (60 * 60);
+		int minutes = (int(total_time_left) % (60 * 60)) / 60;
+		int seconds = int(total_time_left) % 60;
+
+		std::cout << rendering_percent_finished << " \% of rendering finished." << std::endl;
 		std::cout << "Estimated time left is "
 			<< hours << "h:"
 			<< minutes << "m:"
 			<< seconds << "s." << std::endl;
 	}
-	*/
 
 	// To show how much time it actually took to render.
 	time(&time_now);

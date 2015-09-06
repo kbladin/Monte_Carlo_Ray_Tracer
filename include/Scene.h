@@ -14,8 +14,6 @@
 class Scene
 {
 private:
-	int render_mode_;
-
 	std::random_device rd_;
 	std::mt19937* gen_;
 	std::uniform_real_distribution<float>* dis_;
@@ -28,79 +26,35 @@ private:
 
 	friend struct scene_traverser;
 	
-	/*
-	// Bidirectional path tracing for diffuse light
-	SpectralDistribution traceBidirectionalDiffuseRay(
-		Ray r,
-		IntersectionData id,
-		int iteration);
-	std::vector<std::pair< Ray, IntersectionData > > forwardTraceLightRay(
-		Ray r,
-		int iteration);
-	//std::vector<Ray> traceLightRays();
-
-  	// Normal path tracing for diffuse ray
-	std::vector<std::pair< Ray, IntersectionData > > forwardTraceDiffuseRay(
-		Ray r,
-		IntersectionData id,
-		int iteration);
-	std::vector<std::pair< Ray, IntersectionData > > forwardTraceLocalDiffuseRay(
-		Ray r,
-		IntersectionData id);
-	std::vector<std::pair< Ray, IntersectionData > > forwardTraceIndirectDiffuseRay(
-		Ray r,
-		IntersectionData id,
-		int iteration);
-	
-	// Specular and refractive tracing
-	std::vector<std::pair< Ray, IntersectionData > > forwardTraceSpecularRay(
-		Ray r,
-		IntersectionData id,
-		int iteration);
-	std::vector<std::pair< Ray, IntersectionData > > forwardTraceRefractedRay(
-		Ray r,
-		IntersectionData id,
-		int iteration,
-		glm::vec3 offset,
-		bool inside);
-	*/
   	// Normal path tracing for diffuse ray
 	SpectralDistribution traceDiffuseRay(
 		Ray r,
+		int render_mode,
 		IntersectionData id,
 		int iteration);
 	SpectralDistribution traceLocalDiffuseRay(
 		Ray r,
+		int render_mode,
 		IntersectionData id);
 	SpectralDistribution traceIndirectDiffuseRay(
 		Ray r,
+		int render_mode,
 		IntersectionData id,
 		int iteration);
 	
 	// Specular and refractive tracing
 	SpectralDistribution traceSpecularRay(
 		Ray r,
+		int render_mode,
 		IntersectionData id,
 		int iteration);
 	SpectralDistribution traceRefractedRay(
 		Ray r,
+		int render_mode,
 		IntersectionData id,
 		int iteration,
 		glm::vec3 offset,
 		bool inside);
-
-	// Specular and refractive tracing
-	Photon traceSpecularPhoton(
-		Ray r,
-		IntersectionData id,
-		int iteration);
-	Photon traceRefractedPhoton(
-		Ray r,
-		IntersectionData id,
-		int iteration,
-		glm::vec3 offset,
-		bool inside);
-	Photon tracePhoton(Ray r, int iteration);
 
 	bool intersect(IntersectionData* id, Ray r);
 	bool intersectLamp(LightSourceIntersectionData* light_id, Ray r);
@@ -115,7 +69,7 @@ public:
 	
 	void setRenderMode(int render_mode);
 
-	SpectralDistribution traceRay(Ray r, int iteration = 0);
+	SpectralDistribution traceRay(Ray r, int render_mode, int iteration = 0);
 	void buildPhotonMap(const int n_photons);
 };
 
