@@ -82,18 +82,18 @@ public:
 		glm::vec3 p0,
 		glm::vec3 p1,
 		glm::vec3 p2,
-		float radiosity, // [Watts/m^2]
+		float radiosity, // Gets multiplied with color for total radiosity [Watts/m^2]
 		SpectralDistribution color);
 	~LightSource(){};
 	
 	bool 		intersect(LightSourceIntersectionData* light_id, Ray r);
 	glm::vec3 	getPointOnSurface(float u, float v);
 	float 		getArea() const;
+	glm::vec3 		getNormal() const;
 
 	Ray shootLightRay();
 
-	const float radiosity; // [Watts/m^2]
-	const SpectralDistribution color;
+	const SpectralDistribution radiosity; // [Watts/m^2]
 };
 
 #endif

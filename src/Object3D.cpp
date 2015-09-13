@@ -232,8 +232,7 @@ LightSource::LightSource(
 	float radiosity,
 	SpectralDistribution color) :
 	emitter_(p0, p1, p2, NULL),
-	radiosity(radiosity),
-	color(color)
+	radiosity(radiosity * color)
 {}
 
 bool LightSource::intersect(LightSourceIntersectionData* light_id, Ray r)
@@ -245,7 +244,6 @@ bool LightSource::intersect(LightSourceIntersectionData* light_id, Ray r)
 		light_id->t = id.t;
 		light_id->radiosity = radiosity;
 		light_id->area = getArea();
-		light_id->color = color;
 		return true;
 	}
 	else
@@ -260,6 +258,11 @@ glm::vec3 LightSource::getPointOnSurface(float u, float v)
 float LightSource::getArea() const
 {
 	return emitter_.getArea();
+}
+
+glm::vec3 LightSource::getNormal() const
+{
+	return emitter_.getNormal();
 }
 
 Ray LightSource::shootLightRay()
@@ -295,7 +298,6 @@ Ray LightSource::shootLightRay()
 
 	r.direction = random_direction;
 	r.material = Material::air();
-	r.radiance = color * radiosity * glm::dot(random_direction, normal) / 400000;
 	
 	return r;
 }

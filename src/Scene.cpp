@@ -189,8 +189,7 @@ SpectralDistribution Scene::traceLocalDiffuseRay(
 			glm::vec3 differance = lamps_[i]->getPointOnSurface((*dis_)(*gen_),(*dis_)(*gen_)) - shadow_ray.origin;
 			shadow_ray.direction = glm::normalize(differance);
 
-			float brdf = 1 / (2 * M_PI); // Dependent on inclination and azimuth
-			float estimator = 1 / (2 * M_PI); // Dependent on inclination and azimuth
+			SpectralDistribution brdf = id.material.color_diffuse / (2 * M_PI); // Dependent on inclination and azimuth
 			float cos_theta = glm::dot(shadow_ray.direction, id.normal);
 
 			LightSourceIntersectionData shadow_ray_id;
@@ -198,12 +197,12 @@ SpectralDistribution Scene::traceLocalDiffuseRay(
 			if(intersectLamp(&shadow_ray_id, shadow_ray))
 			{
 				float cos_alpha = glm::dot(shadow_ray_id.normal, -shadow_ray.direction);
-				float light_solid_angle = shadow_ray_id.area / n_samples * glm::clamp(cos_alpha, 0.0f, 1.0f) / glm::pow(glm::length(differance), 2);
+				float light_solid_angle = shadow_ray_id.area / n_samples * glm::clamp(cos_alpha, 0.0f, 1.0f) / glm::pow(glm::length(differance), 2) * (2 * M_PI);
 
 				L_local +=
-					(shadow_ray_id.color * shadow_ray_id.radiosity) * // Radiosity
-					brdf * cos_theta / estimator *
-					id.material.color_diffuse *
+					brdf *
+					shadow_ray_id.radiosity * // Radiosity
+					cos_theta *
 					light_solid_angle;// * 1 / glm::pow(glm::length(differance), 2) * glm::clamp(cos_alpha, 0.f, 1.f);
 			}
 		}
@@ -230,8 +229,8 @@ SpectralDistribution Scene::traceIndirectDiffuseRay(
 		float rand1 = glm::asin((*dis_)(*gen_));// (*dis_)(*gen_);
 		float rand2 = (*dis_)(*gen_);
 
-		// Uniform distribution over a half sphere
-		float inclination = glm::acos(1 - rand1);//glm::acos(1 -  2 * (*dis_)(*gen_));
+		// Uniform distribution over a hemisphere
+		float inclination = glm::acos(1 - rand1);
 		float azimuth = 2 * M_PI * rand2;
 		// Change the actual vector
 		glm::vec3 random_direction = id.normal;
@@ -244,15 +243,15 @@ SpectralDistribution Scene::traceIndirectDiffuseRay(
 			azimuth,
 			id.normal));
 
-		float brdf = 1 / (2 * M_PI); // Dependent on inclination and azimuth
+		SpectralDistribution brdf = id.material.color_diffuse / (2 * M_PI); // Dependent on inclination and azimuth
 
 		float cos_angle = glm::dot(random_direction, id.normal);
 		float estimator = cos_angle / M_PI;// 1 / (2 * M_PI);
 
 		r.direction = random_direction;
-		r.radiance *= brdf * cos_angle / estimator * id.material.color_diffuse;
+		r.radiance *= brdf * cos_angle / estimator;
 
-		L_indirect += traceRay(r, render_mode, iteration + 1) * brdf * cos_angle / estimator * id.material.color_diffuse;
+		L_indirect += traceRay(r, render_mode, iteration + 1) * brdf * cos_angle / estimator;
 	}
 	return L_indirect / n_samples;
 }
@@ -358,7 +357,7 @@ SpectralDistribution Scene::traceRay(Ray r, int render_mode, int iteration)
 		switch (render_mode)
 		{
 			case WHITTED_SPECULAR :
-				return lamp_id.color * lamp_id.radiosity;
+				return lamp_id.radiosity;
 			default :
 				return SpectralDistribution();
 		}
@@ -422,8 +421,14 @@ SpectralDistribution Scene::traceRay(Ray r, int render_mode, int iteration)
 					SpectralDistribution photon_radiance;
 					for (int i = 0; i < closest_photons.size(); ++i)
 					{
+						SpectralDistribution brdf = id.material.color_diffuse / (2 * M_PI);
 						float distance = glm::length(closest_photons[i].p.position - ref_node.p.position);
-						photon_radiance += (glm::cos(glm::clamp(distance, 0.0f, limit) * M_PI * 1/limit) + 1)/2 * 1/limit * id.material.color_diffuse * closest_photons[i].p.flux / 5;
+						photon_radiance +=
+							closest_photons[i].p.flux *
+							(glm::cos(glm::clamp(distance, 0.0f, limit) * M_PI * 1/limit) + 1)/2 /
+							(pow(limit, 2) * M_PI) * 2
+							* 1.5 // Random constant?
+							* brdf;
 					}
 
 					diffuse_part = photon_radiance;
@@ -471,13 +476,13 @@ SpectralDistribution Scene::traceRay(Ray r, int render_mode, int iteration)
 
 void Scene::buildPhotonMap(const int n_photons)
 {
+	/*
 	//setRenderMode(PHOTON_MAPPING);
-	float total_radiance = 0;
+	float total_flux = 0;
 	for (int i = 0; i < lamps_.size(); ++i)
 	{
-		total_radiance +=
-			lamps_[i]->radiosity *
-			lamps_[i]->color.power() *
+		total_flux +=
+			lamps_[i]->radiosity.power() *
 			lamps_[i]->getArea();
 	}
 	float random = (*dis_)(*gen_);
@@ -487,9 +492,8 @@ void Scene::buildPhotonMap(const int n_photons)
 	for (int i = 0; i < lamps_.size(); ++i)
 	{
 		float interval =
-			(lamps_[i]->radiosity *
-			lamps_[i]->color.power() *
-			lamps_[i]->getArea()) / total_radiance;
+			lamps_[i]->radiosity.power() *
+			lamps_[i]->getArea() / total_flux;
 		if (random > accumulating_chance && random < accumulating_chance + interval)
 		{ // This lamp got picked
 			picked_light_source = i;
@@ -498,28 +502,23 @@ void Scene::buildPhotonMap(const int n_photons)
 		else
 			accumulating_chance += interval; 
 	}
-
+*/
+	int picked_light_source = 0;
 	for (int k = 0; k < 100; ++k)
 	{
 		#pragma omp parallel for
 		for (int i = 0; i < n_photons / 100; ++i)
 		{
-		// Should actually only shoot towards reftactive and reflective objects!
-		Ray r = lamps_[picked_light_source]->shootLightRay();
-		r.has_intersected = false;
-		r.radiance = lamps_[picked_light_source]->color * total_radiance / n_photons * glm::dot(r.direction, glm::vec3(0,-1,0));
-		/*r.origin = lamps_[picked_light_source]->getPointOnSurface((*dis_)(*gen_), (*dis_)(*gen_)) + glm::vec3(0,-0.0001,0);
-		Sphere* s = NULL;
-		for (int j = 0; j < objects_.size(); ++j)
-		{
-			s = dynamic_cast<Sphere*> (objects_[j]);
-			if (s && s->material().transmissivity) // Pick the first transmissive sphere
-				break;
-		}
-		r.direction = glm::normalize(s->getPointOnSurface((*dis_)(*gen_), (*dis_)(*gen_)) - r.origin);
-		r.material = Material::air();
-		*/
-		traceRay(r, PHOTON_MAPPING, PHOTON_MAPPING);
+			Ray r = lamps_[picked_light_source]->shootLightRay();
+			r.has_intersected = false;
+			// Compute radiance based on the flux of the light source
+			r.radiance =
+				lamps_[picked_light_source]->radiosity *
+				lamps_[picked_light_source]->getArea() /
+				n_photons *
+				glm::dot(r.direction, lamps_[picked_light_source]->getNormal())
+				/ (2 * M_PI);
+			traceRay(r, PHOTON_MAPPING);
 		}
 		std::cout << k << "\% of photon map finished." << std::endl;
 	}

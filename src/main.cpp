@@ -38,12 +38,13 @@ int main(int argc, char const *argv[])
 	time_t time_start, time_now, rendertime_start;
 	time(&time_start);
 
-	static const int WIDTH = 1024 / 4;
-	static const int HEIGHT = 768 / 4;
-	static const int SUB_SAMPLING_CAUSTICS = 1;
-	static const int SUB_SAMPLING_MONTE_CARLO = 1;
-	static const int SUB_SAMPLING_WHITTED_SPECULAR = 1;
-	
+	static const int WIDTH = 1024 / 1;
+	static const int HEIGHT = 768 / 1;
+	static const int SUB_SAMPLING_CAUSTICS = 5;
+	static const int SUB_SAMPLING_MONTE_CARLO = 200;
+	static const int SUB_SAMPLING_WHITTED_SPECULAR = 20;
+	static const int NUMBER_OF_PHOTONS_EMISSION = 5000000;
+
 	// The camera is used to cast appropriate initial rays
 	Camera c(
 		glm::vec3(0, 0, 3.2), // Eye (position of camera)
@@ -67,7 +68,7 @@ int main(int argc, char const *argv[])
 	std::uniform_real_distribution<float> dis(-0.5, 0.5);
 
 	std::cout << "Building photon map." << std::endl;
-	s.buildPhotonMap(500000);
+	s.buildPhotonMap(NUMBER_OF_PHOTONS_EMISSION);
 
 	float rendering_percent_finished = 0;
 	std::cout << "Rendering started!" << std::endl;
@@ -86,6 +87,7 @@ int main(int argc, char const *argv[])
 		{
 			int index = (x + y * c.WIDTH);
 			SpectralDistribution sd;
+			
 			for (int i = 0; i < SUB_SAMPLING_WHITTED_SPECULAR; ++i)
 			{
 				Ray r = c.castRay(
@@ -154,10 +156,14 @@ int main(int argc, char const *argv[])
 		<< minutes << "m:"
 		<< seconds << "s." << std::endl;
 
+
+	// TODO:
+	// Integrate over pixels to calculate intensity from radiance
+	// This will lead to vignetting due to the cosine term of the angle
+	// between the view plane and the ray direction.
+
 	// Convert to byte data
-	// This conversion should be more sophisticated later on,
-	// Gamma correction and / or transformation to logarithmic scale etc.
-	// It should also be dependent on the maximum intensity value.
+	// Gamma correction
 	float gamma = 0.5;
 	for (int x = 0; x < c.WIDTH; ++x)
 	{

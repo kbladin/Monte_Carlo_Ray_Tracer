@@ -63,15 +63,20 @@ struct Ray
 	glm::vec3 origin;
 	glm::vec3 direction;
 	Material material; // The material the ray is travelling in
-	SpectralDistribution radiance; // This is used only when forward tracing ray
-	bool has_intersected;
+	SpectralDistribution radiance; // [Watts / steradian / m^2]
+	bool has_intersected;  // This is used only when forward tracing ray
+
+	// Use the quantity importance when sending out rays from the camera
+	// Importance is anti parallel to the radiance.
+	// When the ray of importance hits an object it will reflect in the exact same
+	// way as radiance emitted from the light source.
 };
 
 struct Photon
 {
 	glm::vec3 position;
 	glm::vec3 direction_in;
-	SpectralDistribution flux;
+	SpectralDistribution flux; // [Watts]
 };
 
 struct KDTreeNode
@@ -100,8 +105,7 @@ struct IntersectionData
 
 struct LightSourceIntersectionData
 {
-	SpectralDistribution color; // The color of the light source
-	float radiosity; // The radiosity of the light source [Watts/m^2]
+	SpectralDistribution radiosity; // The radiosity of the light source [Watts/m^2]
 	float area; // The area of the light source [m^2]
 	glm::vec3 normal; // Normal of the surface hit by the ray
 	float t; // The distance the ray travelled before intersecting
