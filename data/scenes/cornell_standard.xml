@@ -79,7 +79,7 @@
 	<object3D type="sphere" material_id="glass" radius="0.35">
 		<position x="-0.9" y="-0.65" z="0.7" />
 	</object3D>
-	<object3D type="sphere" material_id="diffuse_white" radius="0.2">
+	<object3D type="sphere" material_id="diffuse_blue" radius="0.2">
 		<position x="0.7" y="0.4" z="0.1" />
 	</object3D>
 	<object3D type="mesh" material_id="diffuse_cyan" file_path="../data/meshes/cube.obj">

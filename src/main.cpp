@@ -43,7 +43,7 @@ int main(int argc, char const *argv[])
 	static const int SUB_SAMPLING_CAUSTICS = 1;
 	static const int SUB_SAMPLING_MONTE_CARLO = 1;
 	static const int SUB_SAMPLING_WHITTED_SPECULAR = 1;
-	static const int NUMBER_OF_PHOTONS_EMISSION = 1000000;
+	static const int NUMBER_OF_PHOTONS_EMISSION = 100000;
 
 	// The camera is used to cast appropriate initial rays
 	Camera c(

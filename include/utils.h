@@ -63,7 +63,7 @@ struct Ray
 	glm::vec3 origin;
 	glm::vec3 direction;
 	Material material; // The material the ray is travelling in
-	SpectralDistribution radiance; // [Watts / steradian / m^2]
+	SpectralDistribution delta_flux; // [Watts]
 	bool has_intersected;  // This is used only when forward tracing ray
 
 	// Use the quantity importance when sending out rays from the camera
@@ -76,7 +76,7 @@ struct Photon
 {
 	glm::vec3 position;
 	glm::vec3 direction_in;
-	SpectralDistribution flux; // [Watts]
+	SpectralDistribution delta_flux; // [Watts], Used when tracing rays from light source to photons
 };
 
 struct KDTreeNode

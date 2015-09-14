@@ -249,7 +249,7 @@ SpectralDistribution Scene::traceIndirectDiffuseRay(
 		float estimator = cos_angle / M_PI;// 1 / (2 * M_PI);
 
 		r.direction = random_direction;
-		r.radiance *= brdf * cos_angle / estimator;
+		r.delta_flux *= brdf * cos_angle / estimator;
 
 		L_indirect += traceRay(r, render_mode, iteration + 1) * brdf * cos_angle / estimator;
 	}
@@ -268,7 +268,7 @@ SpectralDistribution Scene::traceSpecularRay(
 	{		
 		// Add some randomization to the direction vector
 		r.direction = glm::reflect(r.direction, id.normal);// shake(perfect_reflection, id.material.polish_power);
-		r.radiance *= id.material.color_specular;
+		r.delta_flux *= id.material.color_specular;
 		// Recursively trace the reflected ray
 		specular += traceRay(r, render_mode, iteration + 1) * id.material.color_specular;
 	}
@@ -323,8 +323,8 @@ SpectralDistribution Scene::traceRefractedRay(
 		recursive_ray_reflected.direction = perfect_reflection; // shake(perfect_reflection, id.material.polish_power);
 		recursive_ray_refracted.direction = perfect_refraction; // shake(perfect_refraction, id.material.clearness_power);
 
-		recursive_ray_reflected.radiance *= id.material.color_specular * R;
-		recursive_ray_refracted.radiance *= (1 - R) * id.material.color_diffuse;
+		recursive_ray_reflected.delta_flux *= id.material.color_specular * R;
+		recursive_ray_refracted.delta_flux *= (1 - R) * id.material.color_diffuse;
 
 		// Recursively trace the refracted rays
 		SpectralDistribution reflected_part = traceRay(recursive_ray_reflected, render_mode, iteration + 1) * id.material.color_specular * R;
@@ -339,7 +339,7 @@ SpectralDistribution Scene::traceRefractedRay(
 			recursive_ray.origin = r.origin + id.t * r.direction + offset;
 		// Add some randomization to the direction vector
 		recursive_ray.direction = perfect_reflection; // shake(perfect_reflection, id.material.polish_power);
-		recursive_ray.radiance *= id.material.color_specular;
+		recursive_ray.delta_flux *= id.material.color_specular;
 		// Recursively trace the reflected ray
 		return traceRay(recursive_ray, render_mode, iteration + 1) * id.material.color_specular;
 	}
@@ -399,7 +399,7 @@ SpectralDistribution Scene::traceRay(Ray r, int render_mode, int iteration)
 						Photon p;
 						p.position = recursive_ray.origin;
 						p.direction_in = -r.direction;
-						p.flux = recursive_ray.radiance;
+						p.delta_flux = recursive_ray.delta_flux;
 
 						KDTreeNode to_insert;
 						to_insert.p = p;
@@ -424,8 +424,9 @@ SpectralDistribution Scene::traceRay(Ray r, int render_mode, int iteration)
 						SpectralDistribution brdf = id.material.color_diffuse / (2 * M_PI);
 						float distance = glm::length(closest_photons[i].p.position - ref_node.p.position);
 						photon_radiance +=
-							closest_photons[i].p.flux *
-							(glm::length(distance) < limit ? 1 : 0)/*(glm::cos(glm::clamp(distance, 0.0f, limit) * M_PI * 1/limit) + 1)/2*/ //delta power of photon
+							closest_photons[i].p.delta_flux *
+							//(glm::cos(glm::clamp(distance, 0.0f, limit) * M_PI * 1/limit) + 1) // Integrand for smooth distribution
+							(glm::length(distance) < limit ? 1 : 0) // Integrand for harsh circles
 							/ (pow(limit, 2) * M_PI) // Delta area
 							 // Random constant?
 							* brdf;
@@ -511,13 +512,11 @@ void Scene::buildPhotonMap(const int n_photons)
 		{
 			Ray r = lamps_[picked_light_source]->shootLightRay();
 			r.has_intersected = false;
-			// Compute radiance based on the flux of the light source
-			r.radiance =
+			// Compute delta_flux based on the flux of the light source
+			r.delta_flux =
 				lamps_[picked_light_source]->radiosity *
 				lamps_[picked_light_source]->getArea() /
-				n_photons // The quantity is actually delta flux
-				/*glm::dot(r.direction, lamps_[picked_light_source]->getNormal())
-				/ (2 * M_PI)*/;
+				n_photons;
 			traceRay(r, PHOTON_MAPPING);
 		}
 		std::cout << k << "\% of photon map finished." << std::endl;
