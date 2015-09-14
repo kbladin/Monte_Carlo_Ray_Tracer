@@ -399,7 +399,7 @@ SpectralDistribution Scene::traceRay(Ray r, int render_mode, int iteration)
 						Photon p;
 						p.position = recursive_ray.origin;
 						p.direction_in = -r.direction;
-						p.flux = recursive_ray.radiance * 2 * M_PI;
+						p.flux = recursive_ray.radiance;
 
 						KDTreeNode to_insert;
 						to_insert.p = p;
@@ -425,9 +425,9 @@ SpectralDistribution Scene::traceRay(Ray r, int render_mode, int iteration)
 						float distance = glm::length(closest_photons[i].p.position - ref_node.p.position);
 						photon_radiance +=
 							closest_photons[i].p.flux *
-							(glm::cos(glm::clamp(distance, 0.0f, limit) * M_PI * 1/limit) + 1)/2 /
-							(pow(limit, 2) * M_PI) * 2
-							* 1.5 // Random constant?
+							(glm::length(distance) < limit ? 1 : 0)/*(glm::cos(glm::clamp(distance, 0.0f, limit) * M_PI * 1/limit) + 1)/2*/ //delta power of photon
+							/ (pow(limit, 2) * M_PI) // Delta area
+							 // Random constant?
 							* brdf;
 					}
 
@@ -515,9 +515,9 @@ void Scene::buildPhotonMap(const int n_photons)
 			r.radiance =
 				lamps_[picked_light_source]->radiosity *
 				lamps_[picked_light_source]->getArea() /
-				n_photons *
-				glm::dot(r.direction, lamps_[picked_light_source]->getNormal())
-				/ (2 * M_PI);
+				n_photons // The quantity is actually delta flux
+				/*glm::dot(r.direction, lamps_[picked_light_source]->getNormal())
+				/ (2 * M_PI)*/;
 			traceRay(r, PHOTON_MAPPING);
 		}
 		std::cout << k << "\% of photon map finished." << std::endl;
