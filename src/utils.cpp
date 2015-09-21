@@ -3,6 +3,8 @@
 
 #include "../include/utils.h"
 
+const float Photon::RADIUS = 0.1;
+
 SpectralDistribution::SpectralDistribution()
 {
 	for (int i = 0; i < N_WAVELENGTHS; ++i)

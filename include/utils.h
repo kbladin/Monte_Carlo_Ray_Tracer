@@ -63,20 +63,18 @@ struct Ray
 	glm::vec3 origin;
 	glm::vec3 direction;
 	Material material; // The material the ray is travelling in
-	SpectralDistribution delta_flux; // [Watts]
+	// The radiance variable is used when tracing rays from light source to photons.
+	// When tracing from the camera, the radiance variable will be used for importance. 
+	SpectralDistribution radiance; // [Watts / m^2 / steradian]
 	bool has_intersected;  // This is used only when forward tracing ray
-
-	// Use the quantity importance when sending out rays from the camera
-	// Importance is anti parallel to the radiance.
-	// When the ray of importance hits an object it will reflect in the exact same
-	// way as radiance emitted from the light source.
 };
 
 struct Photon
 {
 	glm::vec3 position;
 	glm::vec3 direction_in;
-	SpectralDistribution delta_flux; // [Watts], Used when tracing rays from light source to photons
+	SpectralDistribution delta_flux; // [Watts]
+	static const float RADIUS;
 };
 
 struct KDTreeNode

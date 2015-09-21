@@ -73,7 +73,7 @@
 	</light_source>
 
 	<!-- Objects in scene -->
-	<object3D type="mesh" material_id="diffuse_cyan" file_path="../data/meshes/suzanne.obj">
+	<object3D type="mesh" material_id="glass" file_path="../data/meshes/dragon.obj">
 		<transform type="scale">
 			<v x="1.2" y="1.2" z="1.2"/>
 		</transform>
