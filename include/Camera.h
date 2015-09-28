@@ -8,14 +8,15 @@
 
 class Camera
 {
-private:
-	glm::vec3 eye_;
-	glm::vec3 center_;
-	glm::vec3 up_;
-	float fov_;
 public:
+	glm::vec3 eye;
+	glm::vec3 center;
+	glm::vec3 up;
+	float fov;
+
 	const int WIDTH;
 	const int HEIGHT;
+
 	Camera(
 		const glm::vec3 eye,
 		const glm::vec3 center,

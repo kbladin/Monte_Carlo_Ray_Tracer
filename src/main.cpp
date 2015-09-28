@@ -38,12 +38,12 @@ int main(int argc, char const *argv[])
 	time_t time_start, time_now, rendertime_start;
 	time(&time_start);
 
-	static const int WIDTH = 1024 / 2;
-	static const int HEIGHT = 768 / 2;
+	static const int WIDTH = 1024 / 4;
+	static const int HEIGHT = 768 / 4;
 	static const int SUB_SAMPLING_CAUSTICS = 1;
 	static const int SUB_SAMPLING_MONTE_CARLO = 1;
 	static const int SUB_SAMPLING_WHITTED_SPECULAR = 1;
-	static const int NUMBER_OF_PHOTONS_EMISSION = 100000;
+	static const int NUMBER_OF_PHOTONS_EMISSION = 10000;
 
 	// The camera is used to cast appropriate initial rays
 	Camera c(
@@ -53,13 +53,14 @@ int main(int argc, char const *argv[])
 		M_PI / 3, // Field of view in radians
 		WIDTH, // pixel width
 		HEIGHT); // pixel height
+	glm::vec3 camera_plane_normal = glm::normalize(c.center - c.eye);
 
 	// 3D objects are contained in the Scene object
 	Scene s(argv[1]);
 
-	// radiance_values will hold image data
-	SpectralDistribution* radiance_values = new SpectralDistribution[c.WIDTH * c.HEIGHT];
-	// radiance_values need to be converted to rgb pixel data for displaying
+	// irradiance_values will hold image data
+	SpectralDistribution* irradiance_values = new SpectralDistribution[c.WIDTH * c.HEIGHT];
+	// irradiance_values need to be converted to rgb pixel data for displaying
 	unsigned char* pixel_values =
 		new unsigned char[c.WIDTH * c.HEIGHT * 3]; // w * h * rgb
 
@@ -78,7 +79,7 @@ int main(int argc, char const *argv[])
 
 	double prerender_time = difftime(rendertime_start, time_start);
 
-	// Loop through all pixels to calculate their radiance_values by ray-tracing
+	// Loop through all pixels to calculate their irradiance_values by ray-tracing
 	for (int x = 0; x < c.WIDTH; ++x)
 	{
 		// Parallellize the for loop with openMP.
@@ -87,40 +88,45 @@ int main(int argc, char const *argv[])
 		{
 			int index = (x + y * c.WIDTH);
 			SpectralDistribution sd;
-			
-			for (int i = 0; i < SUB_SAMPLING_WHITTED_SPECULAR; ++i)
+			if (SUB_SAMPLING_WHITTED_SPECULAR)
 			{
-				Ray r = c.castRay(
-					x, // Pixel x
-					(c.HEIGHT - y - 1), // Pixel y 
-					dis(gen), // Parameter x (>= -0.5 and < 0.5), for subsampling
-					dis(gen)); // Parameter y (>= -0.5 and < 0.5), for subsampling
-				sd += s.traceRay(r, Scene::WHITTED_SPECULAR);
+				for (int i = 0; i < SUB_SAMPLING_WHITTED_SPECULAR; ++i)
+				{
+					Ray r = c.castRay(
+						x, // Pixel x
+						(c.HEIGHT - y - 1), // Pixel y 
+						dis(gen), // Parameter x (>= -0.5 and < 0.5), for subsampling
+						dis(gen)); // Parameter y (>= -0.5 and < 0.5), for subsampling
+					sd += s.traceRay(r, Scene::WHITTED_SPECULAR) * glm::dot(r.direction, camera_plane_normal);
+				}
+				irradiance_values[index] = sd * (1 / SUB_SAMPLING_WHITTED_SPECULAR) * (2 * M_PI);				
 			}
-			radiance_values[index] = sd / SUB_SAMPLING_WHITTED_SPECULAR;
-
-			for (int i = 0; i < SUB_SAMPLING_CAUSTICS; ++i)
-			{
-				Ray r = c.castRay(
-					x, // Pixel x
-					(c.HEIGHT - y - 1), // Pixel y 
-					dis(gen), // Parameter x (>= -0.5 and < 0.5), for subsampling
-					dis(gen)); // Parameter y (>= -0.5 and < 0.5), for subsampling
-				sd += s.traceRay(r, Scene::CAUSTICS);
+			if (SUB_SAMPLING_CAUSTICS)
+				{
+				for (int i = 0; i < SUB_SAMPLING_CAUSTICS; ++i)
+				{
+					Ray r = c.castRay(
+						x, // Pixel x
+						(c.HEIGHT - y - 1), // Pixel y 
+						dis(gen), // Parameter x (>= -0.5 and < 0.5), for subsampling
+						dis(gen)); // Parameter y (>= -0.5 and < 0.5), for subsampling
+					sd += s.traceRay(r, Scene::CAUSTICS) * glm::dot(r.direction, camera_plane_normal);
+				}
+				irradiance_values[index] += sd * (1 / SUB_SAMPLING_CAUSTICS) * (2 * M_PI);
 			}
-			radiance_values[index] += sd / SUB_SAMPLING_CAUSTICS;
-
-			for (int i = 0; i < SUB_SAMPLING_MONTE_CARLO; ++i)
-			{
-				Ray r = c.castRay(
-					x, // Pixel x
-					(c.HEIGHT - y - 1), // Pixel y 
-					dis(gen), // Parameter x (>= -0.5 and < 0.5), for subsampling
-					dis(gen)); // Parameter y (>= -0.5 and < 0.5), for subsampling
-				sd += s.traceRay(r, Scene::MONTE_CARLO);
+			if (SUB_SAMPLING_MONTE_CARLO)
+				{
+				for (int i = 0; i < SUB_SAMPLING_MONTE_CARLO; ++i)
+				{
+					Ray r = c.castRay(
+						x, // Pixel x
+						(c.HEIGHT - y - 1), // Pixel y 
+						dis(gen), // Parameter x (>= -0.5 and < 0.5), for subsampling
+						dis(gen)); // Parameter y (>= -0.5 and < 0.5), for subsampling
+					sd += s.traceRay(r, Scene::MONTE_CARLO) * glm::dot(r.direction, camera_plane_normal);
+				}
+				irradiance_values[index] += sd * (1 / SUB_SAMPLING_MONTE_CARLO) * (2 * M_PI);
 			}
-			radiance_values[index] += sd / SUB_SAMPLING_MONTE_CARLO;
-		
 		}
 
 		// To show how much time we have left.
@@ -157,12 +163,6 @@ int main(int argc, char const *argv[])
 		<< minutes << "m:"
 		<< seconds << "s." << std::endl;
 
-
-	// TODO:
-	// Integrate over pixels to calculate intensity from radiance
-	// This will lead to vignetting due to the cosine term of the angle
-	// between the view plane and the ray direction.
-
 	// Convert to byte data
 	// Gamma correction
 	float gamma = 0.5;
@@ -172,11 +172,11 @@ int main(int argc, char const *argv[])
 		{
 			int index = (x + y * c.WIDTH);
 			pixel_values[index * 3 + 0] = char(int(glm::clamp(
-				glm::pow(radiance_values[index][0],gamma), 0.0f, 1.0f) * 255)); // Red
+				glm::pow(irradiance_values[index][0],gamma), 0.0f, 1.0f) * 255)); // Red
 			pixel_values[index * 3 + 1] = char(int(glm::clamp(
-				glm::pow(radiance_values[index][1],gamma), 0.0f, 1.0f) * 255)); // Green
+				glm::pow(irradiance_values[index][1],gamma), 0.0f, 1.0f) * 255)); // Green
 			pixel_values[index * 3 + 2] = char(int(glm::clamp(
-				glm::pow(radiance_values[index][2],gamma), 0.0f, 1.0f) * 255)); // Blue
+				glm::pow(irradiance_values[index][2],gamma), 0.0f, 1.0f) * 255)); // Blue
 		}
 	}
 
@@ -186,7 +186,7 @@ int main(int argc, char const *argv[])
 	savePPM(file_name.c_str(), WIDTH, HEIGHT, pixel_values);
 	
 	// Clean up
-	delete [] radiance_values;
+	delete [] irradiance_values;
 	delete [] pixel_values;
   
 	// Make a beep sound

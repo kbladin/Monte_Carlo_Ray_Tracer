@@ -61,8 +61,7 @@ bool scene_traverser::for_each(pugi::xml_node& node)
         
         float transmissivity = std::stof(node.attribute("transmissivity").value());
         float refraction_index = std::stof(node.attribute("refraction_index").value());
-        float polish_power = std::stof(node.attribute("polish_power").value());
-        float clearness_power = std::stof(node.attribute("clearness_power").value());
+        float diffuse_roughness = std::stof(node.attribute("diffuse_roughness").value());
         
         SpectralDistribution color_diffuse;
         SpectralDistribution color_specular;
@@ -82,8 +81,7 @@ bool scene_traverser::for_each(pugi::xml_node& node)
         
         m->transmissivity = transmissivity;
         m->refraction_index = refraction_index;
-        m->polish_power = polish_power;
-        m->clearness_power = clearness_power;
+        m->diffuse_roughness = diffuse_roughness;
 
         scene->materials_.insert(std::pair<std::string, Material*>(id, m));
     }

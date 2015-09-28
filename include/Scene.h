@@ -67,8 +67,6 @@ public:
 	  PHOTON_MAPPING, CAUSTICS, WHITTED_SPECULAR, MONTE_CARLO,
 	};
 	
-	void setRenderMode(int render_mode);
-
 	SpectralDistribution traceRay(Ray r, int render_mode, int iteration = 0);
 	void buildPhotonMap(const int n_photons);
 };

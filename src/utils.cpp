@@ -158,3 +158,34 @@ Material Material::air()
 	air.refraction_index = 1;
 	return air;
 }
+
+SpectralDistribution evaluateLambertianBRDF(
+	glm::vec3 d1,
+	glm::vec3 d2,
+	glm::vec3 normal,
+	SpectralDistribution albedo)
+{
+	return albedo / (2 * M_PI);
+}
+SpectralDistribution evaluateOrenNayarBRDF(
+	glm::vec3 d1,
+	glm::vec3 d2,
+	glm::vec3 normal,
+	SpectralDistribution albedo,
+	float roughness)
+{
+	float sigma2 = roughness * roughness;
+	float A = 1 - 0.5 * sigma2 / (sigma2 + 0.57);
+	float B = 0.45 * sigma2 / (sigma2 + 0.09);
+	float cos_theta_d1 = glm::dot(d1, normal);
+	float cos_theta_d2 = glm::dot(d2, normal);
+	float theta = glm::acos(cos_theta_d2);
+	float theta_d1 = glm::acos(cos_theta_d1);
+	float alpha = glm::max(theta, theta_d1);
+	float beta = glm::min(theta, theta_d1);
+	float cos_d1_d2 = glm::dot(d1, d2);
+
+	return
+	albedo / (2 * M_PI) *
+	(A + (B * glm::max(0.0f, cos_d1_d2)) * glm::sin(alpha) * glm::tan(beta));
+}

@@ -10,10 +10,10 @@ Camera::Camera (
 	int width,
 	int height) :
 
-	eye_(eye),
-	center_(center),
-	up_(up),
-	fov_(fov),
+	eye(eye),
+	center(center),
+	up(up),
+	fov(fov),
 	WIDTH(width),
 	HEIGHT(height)
 {}
@@ -38,9 +38,9 @@ Ray Camera::castRay(
 	else
 	{
 		// View and perspective matrices are used in the unProject() function
-		glm::mat4 V = glm::lookAt(eye_, center_, up_);
+		glm::mat4 V = glm::lookAt(eye, center, up);
 		float aspect = float(WIDTH) / HEIGHT;
-		glm::mat4 P = glm::perspective(fov_, aspect, 0.1f, 100.0f);
+		glm::mat4 P = glm::perspective(fov, aspect, 0.1f, 100.0f);
 
 		// The unProject() function returns a vector in world-space which
 		// defines a direction out of the frustum depending on which pixel

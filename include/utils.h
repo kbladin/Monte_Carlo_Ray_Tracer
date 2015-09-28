@@ -52,8 +52,7 @@ struct Material
 	float specular_reflectance; // [0 , 1] part of reflectance
 	float transmissivity; // [0 , 1]
 	float refraction_index; // [1 (air) , 2.4 (diamond)]
-	float polish_power; // [1 , inf) High => near perfect reflection
-	float clearness_power; // [1 , inf) High => near perfect refraction
+	float diffuse_roughness; // [0 , inf) 0 : Lambertian reflector
 
 	static Material air();
 };
@@ -108,5 +107,18 @@ struct LightSourceIntersectionData
 	glm::vec3 normal; // Normal of the surface hit by the ray
 	float t; // The distance the ray travelled before intersecting
 };
+
+SpectralDistribution evaluateLambertianBRDF(
+	glm::vec3 d1,
+	glm::vec3 d2,
+	glm::vec3 normal,
+	SpectralDistribution albedo);
+SpectralDistribution evaluateOrenNayarBRDF(
+	glm::vec3 d1,
+	glm::vec3 d2,
+	glm::vec3 normal,
+	SpectralDistribution albedo,
+	float roughness);
+
 
 #endif // UTILS_H

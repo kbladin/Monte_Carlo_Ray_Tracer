@@ -31,7 +31,21 @@
 	<material id="diffuse_gray" reflectance="1" specular_reflectance="0" transmissivity="0" refraction_index="1" diffuse_roughness="0">
 		<color_diffuse r="0.5" g="0.5" b="0.5" />
 		<color_specular r="1" g="1" b="1" />
-	</material> 
+	</material>
+
+	<!-- Materials with Oren Nayar reflectance model -->
+	<material id="high_roughness" reflectance="1" specular_reflectance="0" transmissivity="0" refraction_index="1" diffuse_roughness="100000">
+		<color_diffuse  r="0.8" g="0.8" b="1.0" />
+		<color_specular r="1" g="1" b="1" />
+	</material>
+	<material id="medium_roughness" reflectance="1" specular_reflectance="0" transmissivity="0" refraction_index="1" diffuse_roughness="1">
+		<color_diffuse  r="0.8" g="0.8" b="1.0" />
+		<color_specular r="1" g="1" b="1" />
+	</material>
+	<material id="low_roughness" reflectance="1" specular_reflectance="0" transmissivity="0" refraction_index="1" diffuse_roughness="0">
+		<color_diffuse  r="0.8" g="0.8" b="1.0" />
+		<color_specular r="1" g="1" b="1" />
+	</material>
 
 	<!-- Back wall -->
 	<object3D type="plane" material_id="diffuse_white">
@@ -65,7 +79,7 @@
 	</object3D>
 
 	<!-- Light source -->
-	<light_source type="lamp_plane" emittance="150">
+	<light_source type="lamp_plane" emittance="20">
 		<P0 x="-0.3" y="0.9999" z="0.7" />
 		<P1 x="0.3"  y="0.9999" z="0.7" />
 		<P2 x="-0.3" y="0.9999" z="1.3" />
@@ -73,15 +87,7 @@
 	</light_source>
 
 	<!-- Objects in scene -->
-	<object3D type="mesh" material_id="diffuse_cyan" file_path="../data/meshes/dragon.obj">
-		<transform type="scale">
-			<v x="1.2" y="1.2" z="1.2"/>
-		</transform>
-		<transform type="rotate" angle="-2.7">
-			<v x="0" y="1" z="0"/>
-		</transform>
-		<transform type="translate">
-			<v x="0" y="-1" z="0.5"/>
-		</transform>
+	<object3D type="sphere" material_id="high_roughness" radius="0.6">
+		<position x="0" y="-0.4" z="0" />
 	</object3D>
 </scene>
