@@ -239,11 +239,13 @@ SpectralDistribution Scene::traceIndirectDiffuseRay(
 				id.material.diffuse_roughness);
 		}
 		else
+		{
 			brdf = evaluateLambertianBRDF(
 				-r.direction,
 				random_direction,
 				id.normal,
 				id.material.color_diffuse);
+		}
 
 		r.direction = random_direction;
 		r.radiance *= brdf * cos_angle / estimator;

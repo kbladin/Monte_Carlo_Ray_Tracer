@@ -43,7 +43,7 @@ int main(int argc, char const *argv[])
 	static const int SUB_SAMPLING_CAUSTICS = 1;
 	static const int SUB_SAMPLING_MONTE_CARLO = 1;
 	static const int SUB_SAMPLING_WHITTED_SPECULAR = 1;
-	static const int NUMBER_OF_PHOTONS_EMISSION = 10000;
+	static const int NUMBER_OF_PHOTONS_EMISSION = 200000;
 
 	// The camera is used to cast appropriate initial rays
 	Camera c(
@@ -99,7 +99,7 @@ int main(int argc, char const *argv[])
 						dis(gen)); // Parameter y (>= -0.5 and < 0.5), for subsampling
 					sd += s.traceRay(r, Scene::WHITTED_SPECULAR) * glm::dot(r.direction, camera_plane_normal);
 				}
-				irradiance_values[index] = sd * (1 / SUB_SAMPLING_WHITTED_SPECULAR) * (2 * M_PI);				
+				irradiance_values[index] += sd / SUB_SAMPLING_WHITTED_SPECULAR * (2 * M_PI);				
 			}
 			if (SUB_SAMPLING_CAUSTICS)
 				{
@@ -112,7 +112,7 @@ int main(int argc, char const *argv[])
 						dis(gen)); // Parameter y (>= -0.5 and < 0.5), for subsampling
 					sd += s.traceRay(r, Scene::CAUSTICS) * glm::dot(r.direction, camera_plane_normal);
 				}
-				irradiance_values[index] += sd * (1 / SUB_SAMPLING_CAUSTICS) * (2 * M_PI);
+				irradiance_values[index] += sd / SUB_SAMPLING_CAUSTICS * (2 * M_PI);
 			}
 			if (SUB_SAMPLING_MONTE_CARLO)
 				{
@@ -125,7 +125,7 @@ int main(int argc, char const *argv[])
 						dis(gen)); // Parameter y (>= -0.5 and < 0.5), for subsampling
 					sd += s.traceRay(r, Scene::MONTE_CARLO) * glm::dot(r.direction, camera_plane_normal);
 				}
-				irradiance_values[index] += sd * (1 / SUB_SAMPLING_MONTE_CARLO) * (2 * M_PI);
+				irradiance_values[index] += sd / SUB_SAMPLING_MONTE_CARLO * (2 * M_PI);
 			}
 		}
 
