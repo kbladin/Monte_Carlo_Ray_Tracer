@@ -165,8 +165,15 @@ SpectralDistribution evaluateLambertianBRDF(
 	glm::vec3 normal,
 	SpectralDistribution albedo)
 {
-	return albedo / (2 * M_PI);
+	return albedo / M_PI;
 }
+
+SpectralDistribution evaluatePerfectBRDF(
+	SpectralDistribution albedo)
+{
+	return albedo;
+}
+
 SpectralDistribution evaluateOrenNayarBRDF(
 	glm::vec3 d1,
 	glm::vec3 d2,
@@ -186,6 +193,6 @@ SpectralDistribution evaluateOrenNayarBRDF(
 	float cos_d1_d2 = glm::dot(d1, d2);
 
 	return
-	albedo / (2 * M_PI) *
+	albedo / M_PI *
 	(A + (B * glm::max(0.0f, cos_d1_d2)) * glm::sin(alpha) * glm::tan(beta));
 }

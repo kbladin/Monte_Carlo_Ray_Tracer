@@ -4,7 +4,7 @@
 #include <time.h>
 
 #include <glm/glm.hpp>
-#include <libiomp/omp.h>
+#include <omp.h>
 
 #include "../include/Camera.h"
 #include "../include/Scene.h"
@@ -38,10 +38,10 @@ int main(int argc, char const *argv[])
 	time_t time_start, time_now, rendertime_start;
 	time(&time_start);
 
-	static const int WIDTH = 1024 / 4;
-	static const int HEIGHT = 768 / 4;
+	static const int WIDTH = 1024 / 8;
+	static const int HEIGHT = 768 / 8;
 	static const int SUB_SAMPLING_CAUSTICS = 1;
-	static const int SUB_SAMPLING_MONTE_CARLO = 1;
+	static const int SUB_SAMPLING_MONTE_CARLO = 20;
 	static const int SUB_SAMPLING_WHITTED_SPECULAR = 1;
 	static const int NUMBER_OF_PHOTONS_EMISSION = 200000;
 
@@ -101,6 +101,7 @@ int main(int argc, char const *argv[])
 				}
 				irradiance_values[index] += sd / SUB_SAMPLING_WHITTED_SPECULAR * (2 * M_PI);				
 			}
+			sd = SpectralDistribution();
 			if (SUB_SAMPLING_CAUSTICS)
 				{
 				for (int i = 0; i < SUB_SAMPLING_CAUSTICS; ++i)
@@ -114,6 +115,7 @@ int main(int argc, char const *argv[])
 				}
 				irradiance_values[index] += sd / SUB_SAMPLING_CAUSTICS * (2 * M_PI);
 			}
+			sd = SpectralDistribution();
 			if (SUB_SAMPLING_MONTE_CARLO)
 				{
 				for (int i = 0; i < SUB_SAMPLING_MONTE_CARLO; ++i)
@@ -165,7 +167,7 @@ int main(int argc, char const *argv[])
 
 	// Convert to byte data
 	// Gamma correction
-	float gamma = 0.5;
+	float gamma = 0.8;
 	for (int x = 0; x < c.WIDTH; ++x)
 	{
 		for (int y = 0; y < c.HEIGHT; ++y)

@@ -279,11 +279,11 @@ Ray LightSource::shootLightRay()
 	glm::vec3 normal = emitter_.getNormal();
 	glm::vec3 tangent = emitter_.getFirstTangent();
 	// rand1 is a random number from the cosine estimator
-	float rand1 = glm::asin(dis(gen));// (*dis_)(*gen_);
+	float rand1 = dis(gen);//glm::asin(dis(gen));// (*dis_)(*gen_);
 	float rand2 = dis(gen);
 
 	// Uniform distribution
-	float inclination = glm::acos(1 - rand1);//glm::acos(1 -  2 * (*dis_)(*gen_));
+	float inclination = acos(sqrt(rand1));//glm::acos(1 - rand1);//glm::acos(1 -  2 * (*dis_)(*gen_));
 	float azimuth = 2 * M_PI * rand2;
 	// Change the actual vector
 	glm::vec3 random_direction = normal;

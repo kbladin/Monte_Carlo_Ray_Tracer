@@ -63,6 +63,10 @@ Ray Camera::castRay(
 		r.direction = direction;
 		 // Set air as the starting material for the ray to travel in.
 		r.material = Material::air();
+		r.radiance = SpectralDistribution(); // Importance
+		r.radiance[0] = 1;
+		r.radiance[1] = 1;
+		r.radiance[2] = 1;
 	}
 	return r;
 }

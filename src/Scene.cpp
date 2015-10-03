@@ -131,9 +131,9 @@ SpectralDistribution Scene::traceDiffuseRay(
 	r.has_intersected = true;
 	// Start by adding the local illumination part (shadow rays)
 	SpectralDistribution total_diffuse = traceLocalDiffuseRay(r, render_mode, id);
-	if (!(iteration >= 2)) // Do not end here
+	//if (!(iteration >= 2)) // Do not end here
 		// Add the indirect illumination part (Monte Carlo sampling)
-		total_diffuse = total_diffuse * 0.5 + traceIndirectDiffuseRay(r, render_mode, id, iteration) * 0.5;
+		total_diffuse = total_diffuse + traceIndirectDiffuseRay(r, render_mode, id, iteration);
 	return total_diffuse;
 }
 
@@ -146,7 +146,7 @@ SpectralDistribution Scene::traceLocalDiffuseRay(
 	// Cast shadow rays
 	// We divide up the area light source in to n_samples area parts.
 	// Used to define the solid angle
-	static const int n_samples = 10;
+	static const int n_samples = 1;
 	for (int i = 0; i < lamps_.size(); ++i)
 	{
 		for (int j = 0; j < n_samples; ++j)
@@ -166,7 +166,7 @@ SpectralDistribution Scene::traceLocalDiffuseRay(
 					-r.direction,
 					shadow_ray.direction,
 					id.normal,
-					id.material.color_diffuse,
+					id.material.color_diffuse * id.material.reflectance,
 					id.material.diffuse_roughness);
 			}
 			else
@@ -174,22 +174,23 @@ SpectralDistribution Scene::traceLocalDiffuseRay(
 					-r.direction,
 					shadow_ray.direction,
 					id.normal,
-					id.material.color_diffuse);
+					id.material.color_diffuse * id.material.reflectance);
 
 			if(intersectLamp(&shadow_ray_id, shadow_ray))
 			{
 				float cos_light_angle = glm::dot(shadow_ray_id.normal, -shadow_ray.direction);
-				float light_solid_angle = shadow_ray_id.area / n_samples * glm::clamp(cos_light_angle, 0.0f, 1.0f) / glm::pow(glm::length(differance), 2) * (2 * M_PI);
+				float light_solid_angle = shadow_ray_id.area / n_samples * glm::clamp(cos_light_angle, 0.0f, 1.0f) / glm::pow(glm::length(differance), 2) / (M_PI * 2);
 
 				L_local +=
 					brdf *
-					shadow_ray_id.radiosity * // Radiosity
+					shadow_ray_id.radiosity *
 					cos_theta *
-					light_solid_angle;// * 1 / glm::pow(glm::length(differance), 2) * glm::clamp(cos_light_angle, 0.f, 1.f);
+					light_solid_angle
+					 * r.radiance; // Importance
 			}
 		}
 	}
-	return L_local /= n_samples;
+	return L_local;
 }
 
 SpectralDistribution Scene::traceIndirectDiffuseRay(
@@ -208,11 +209,11 @@ SpectralDistribution Scene::traceIndirectDiffuseRay(
 		glm::vec3 tangent = glm::normalize(glm::cross(id.normal, helper));
 
 		// rand1 is a random number from the cosine estimator
-		float rand1 = glm::asin((*dis_)(*gen_));// (*dis_)(*gen_);
+		float rand1 = (*dis_)(*gen_);
 		float rand2 = (*dis_)(*gen_);
 
 		// Uniform distribution over a hemisphere
-		float inclination = glm::acos(1 - rand1);
+		float inclination = acos(sqrt(rand1));//glm::acos(1 - rand1);//glm::acos(1 -  2 * (*dis_)(*gen_));
 		float azimuth = 2 * M_PI * rand2;
 		// Change the actual vector
 		glm::vec3 random_direction = id.normal;
@@ -226,7 +227,7 @@ SpectralDistribution Scene::traceIndirectDiffuseRay(
 			id.normal));
 
 		float cos_angle = glm::dot(random_direction, id.normal);
-		float estimator = cos_angle / M_PI;// 1 / (2 * M_PI);
+		float g = cos_angle / M_PI;
 
 		SpectralDistribution brdf;
 		if (id.material.diffuse_roughness)
@@ -235,7 +236,7 @@ SpectralDistribution Scene::traceIndirectDiffuseRay(
 				-r.direction,
 				random_direction,
 				id.normal,
-				id.material.color_diffuse,
+				id.material.color_diffuse * id.material.reflectance,
 				id.material.diffuse_roughness);
 		}
 		else
@@ -244,13 +245,13 @@ SpectralDistribution Scene::traceIndirectDiffuseRay(
 				-r.direction,
 				random_direction,
 				id.normal,
-				id.material.color_diffuse);
+				id.material.color_diffuse * id.material.reflectance);
 		}
 
 		r.direction = random_direction;
-		r.radiance *= brdf * cos_angle / estimator;
-
-		L_indirect += traceRay(r, render_mode, iteration + 1) * brdf * cos_angle / estimator;
+		//SpectralDistribution importance = brdf * cos_angle / g;
+		r.radiance *= M_PI * brdf; // Importance
+		L_indirect += traceRay(r, render_mode, iteration + 1) * r.radiance;
 	}
 	return L_indirect / n_samples;
 }
@@ -266,9 +267,10 @@ SpectralDistribution Scene::traceSpecularRay(
 	if (!(iteration >= 5)) // Do not end here
 	{		
 		r.direction = glm::reflect(r.direction, id.normal);
-		r.radiance *= id.material.color_specular;
+		SpectralDistribution brdf = evaluatePerfectBRDF(id.material.color_specular * id.material.reflectance * id.material.specular_reflectance);
+		r.radiance *= brdf;
 		// Recursively trace the reflected ray
-		specular += traceRay(r, render_mode, iteration + 1) * id.material.color_specular;
+		specular += traceRay(r, render_mode, iteration + 1) * r.radiance;
 	}
 	return specular;
 }
@@ -320,12 +322,16 @@ SpectralDistribution Scene::traceRefractedRay(
 		recursive_ray_reflected.direction = perfect_reflection;
 		recursive_ray_refracted.direction = perfect_refraction;
 
-		recursive_ray_reflected.radiance *= id.material.color_specular * R;
-		recursive_ray_refracted.radiance *= (1 - R) * id.material.color_diffuse;
+		SpectralDistribution brdf_specular = evaluatePerfectBRDF(id.material.color_specular * id.material.reflectance * id.material.specular_reflectance * R);
+		SpectralDistribution brdf_refractive = evaluatePerfectBRDF(id.material.color_specular * id.material.reflectance * id.material.specular_reflectance * (1 - R));
+
+
+		recursive_ray_reflected.radiance *= brdf_specular;// id.material.color_specular * R;
+		recursive_ray_refracted.radiance *= brdf_refractive;// (1 - R) * id.material.color_diffuse;
 
 		// Recursively trace the refracted rays
-		SpectralDistribution reflected_part = traceRay(recursive_ray_reflected, render_mode, iteration + 1) * id.material.color_specular * R;
-		SpectralDistribution refracted_part= traceRay(recursive_ray_refracted, render_mode, iteration + 1) * (1 - R) * id.material.color_diffuse;
+		SpectralDistribution reflected_part = traceRay(recursive_ray_reflected, render_mode, iteration + 1) * recursive_ray_reflected.radiance;// * id.material.color_specular * R;
+		SpectralDistribution refracted_part= traceRay(recursive_ray_refracted, render_mode, iteration + 1) * recursive_ray_refracted.radiance;// (1 - R) * id.material.color_diffuse;
 		return reflected_part + refracted_part;
 	}
 	else
@@ -343,6 +349,8 @@ SpectralDistribution Scene::traceRefractedRay(
 
 SpectralDistribution Scene::traceRay(Ray r, int render_mode, int iteration)
 {
+	if (iteration > 20)
+		return SpectralDistribution();
 	IntersectionData id;
 	LightSourceIntersectionData lamp_id;
 
@@ -352,9 +360,9 @@ SpectralDistribution Scene::traceRay(Ray r, int render_mode, int iteration)
 		switch (render_mode)
 		{
 			case WHITTED_SPECULAR :
-				return lamp_id.radiosity;
+				return lamp_id.radiosity / (M_PI * 2);
 			default :
-				return SpectralDistribution();
+				return SpectralDistribution(); //lamp_id.radiosity / (M_PI * 2);
 		}
 	else if (intersect(&id, r))
 	{ // Ray hit another object
@@ -396,7 +404,10 @@ SpectralDistribution Scene::traceRay(Ray r, int render_mode, int iteration)
 						p.direction_in = -r.direction;
 
 						float photon_area = Photon::RADIUS * Photon::RADIUS * M_PI;
-						p.delta_flux = recursive_ray.radiance * photon_area * (2 * M_PI);
+						float projected_area = photon_area;// * glm::dot(p.direction_in, id.normal);
+						float solid_angle = (M_PI * 2);
+			
+						p.delta_flux = recursive_ray.radiance * projected_area * solid_angle;
 
 						KDTreeNode to_insert;
 						to_insert.p = p;
@@ -416,7 +427,25 @@ SpectralDistribution Scene::traceRay(Ray r, int render_mode, int iteration)
 					SpectralDistribution photon_radiance;
 					for (int i = 0; i < closest_photons.size(); ++i)
 					{
-						SpectralDistribution brdf = id.material.color_diffuse / (2 * M_PI);
+						SpectralDistribution brdf;
+						if (id.material.diffuse_roughness)
+						{
+							brdf = evaluateOrenNayarBRDF(
+								-r.direction,
+								closest_photons[i].p.direction_in,
+								id.normal,
+								id.material.color_diffuse * id.material.reflectance,
+								id.material.diffuse_roughness);
+						}
+						else
+						{
+							brdf = evaluateLambertianBRDF(
+								-r.direction,
+								closest_photons[i].p.direction_in,
+								id.normal,
+								id.material.color_diffuse * id.material.reflectance);
+						}
+
 						float distance = glm::length(closest_photons[i].p.position - ref_node.p.position);
 						// The area of the photon if its inclination angle
 						// is 90 degrees and the surface is flat.
@@ -427,11 +456,12 @@ SpectralDistribution Scene::traceRay(Ray r, int render_mode, int iteration)
 						float cos_theta = glm::dot(closest_photons[i].p.direction_in, id.normal);
 						photon_radiance +=
 							closest_photons[i].p.delta_flux *
-							//(glm::cos(glm::clamp(distance, 0.0f, limit) * M_PI * 1/limit) + 1) // Integrand for smooth distribution
-							(glm::length(distance) < Photon::RADIUS ? 1 : 0) // Integrand for harsh circles
+							(glm::length(distance) < Photon::RADIUS ? 1 : 0)
 							/ photon_area // Delta area
-							* cos_theta
-							* brdf;
+							//* cos_theta
+							* brdf
+							* r.radiance // Importance
+							* 0.5; // Dont know why 0.5 here but it works...
 					}
 
 					diffuse_part = photon_radiance;
@@ -519,7 +549,9 @@ void Scene::buildPhotonMap(const int n_photons)
 				lamps_[picked_light_source]->getArea() /
 				n_photons;
 			float photon_area = Photon::RADIUS * Photon::RADIUS * M_PI;
-			r.radiance = delta_flux / photon_area / (M_PI * 2);
+			float projected_area = photon_area;// * glm::dot(r.direction, lamps_[picked_light_source]->getNormal());
+			float solid_angle = (M_PI * 2);
+			r.radiance = delta_flux / (projected_area * solid_angle);
 			traceRay(r, PHOTON_MAPPING);
 		}
 		std::cout << k << "\% of photon map finished." << std::endl;

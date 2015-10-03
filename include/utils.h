@@ -108,6 +108,8 @@ struct LightSourceIntersectionData
 	float t; // The distance the ray travelled before intersecting
 };
 
+SpectralDistribution evaluatePerfectBRDF(
+	SpectralDistribution albedo);
 SpectralDistribution evaluateLambertianBRDF(
 	glm::vec3 d1,
 	glm::vec3 d2,
