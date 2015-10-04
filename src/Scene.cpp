@@ -283,8 +283,8 @@ SpectralDistribution Scene::traceRefractedRay(
 	glm::vec3 offset,
 	bool inside)
 {
-	if (iteration >= 5)
-		return SpectralDistribution();
+	//if (iteration >= 5)
+	//	return SpectralDistribution();
 	
 	Ray recursive_ray = r;
 	recursive_ray.has_intersected = true;
@@ -349,8 +349,6 @@ SpectralDistribution Scene::traceRefractedRay(
 
 SpectralDistribution Scene::traceRay(Ray r, int render_mode, int iteration)
 {
-	if (iteration > 20)
-		return SpectralDistribution();
 	IntersectionData id;
 	LightSourceIntersectionData lamp_id;
 
@@ -364,6 +362,12 @@ SpectralDistribution Scene::traceRay(Ray r, int render_mode, int iteration)
 		}
 	else if (intersect(&id, r))
 	{ // Ray hit another object
+		// Russian roulette
+		float random = (*dis_)(*gen_);
+		float termination_probability = 0.8;
+		if (random > termination_probability || iteration > 20)
+			return SpectralDistribution();
+
 		// To make sure it does not intersect with itself again
 		glm::vec3 offset = id.normal * 0.0001f;
 		bool inside = false;
@@ -405,7 +409,7 @@ SpectralDistribution Scene::traceRay(Ray r, int render_mode, int iteration)
 						float projected_area = photon_area;// * glm::dot(p.direction_in, id.normal);
 						float solid_angle = (M_PI * 2);
 			
-						p.delta_flux = recursive_ray.radiance * projected_area * solid_angle;
+						p.delta_flux = recursive_ray.radiance / termination_probability * projected_area * solid_angle;
 
 						KDTreeNode to_insert;
 						to_insert.p = p;
@@ -456,7 +460,6 @@ SpectralDistribution Scene::traceRay(Ray r, int render_mode, int iteration)
 							closest_photons[i].p.delta_flux *
 							(glm::length(distance) < Photon::RADIUS ? 1 : 0)
 							/ photon_area // Delta area
-							//* cos_theta
 							* brdf
 							* r.radiance // Importance
 							* 0.5; // Dont know why 0.5 here but it works...
@@ -499,7 +502,7 @@ SpectralDistribution Scene::traceRay(Ray r, int render_mode, int iteration)
 				traceRefractedRay(r, render_mode, id, iteration, offset, inside);
 			total += transmitted_part * transmissivity;
 		}
-		return total;
+		return total / termination_probability;
 	}
 	return SpectralDistribution();
 }
