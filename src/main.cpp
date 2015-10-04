@@ -41,7 +41,7 @@ int main(int argc, char const *argv[])
 	static const int WIDTH = 1024 / 8;
 	static const int HEIGHT = 768 / 8;
 	static const int SUB_SAMPLING_CAUSTICS = 1;
-	static const int SUB_SAMPLING_MONTE_CARLO = 20;
+	static const int SUB_SAMPLING_MONTE_CARLO = 10;
 	static const int SUB_SAMPLING_WHITTED_SPECULAR = 1;
 	static const int NUMBER_OF_PHOTONS_EMISSION = 200000;
 
@@ -167,7 +167,7 @@ int main(int argc, char const *argv[])
 
 	// Convert to byte data
 	// Gamma correction
-	float gamma = 0.8;
+	float gamma = 1 / 2.2;
 	for (int x = 0; x < c.WIDTH; ++x)
 	{
 		for (int y = 0; y < c.HEIGHT; ++y)

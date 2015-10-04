@@ -2,33 +2,33 @@
 	<!-- Define all materials used in the scene -->
 	<material id="mirror" reflectance="1" specular_reflectance="1" transmissivity="0" refraction_index="1" diffuse_roughness="0">
 		<color_diffuse  r="0.2" g="0.2" b="0.8" />
-		<color_specular r="1" g="0.95" b="0.9" />
+		<color_specular r="1" g="0.9" b="0.8" />
 	</material>
-	<material id="glass" reflectance="1" specular_reflectance="1" transmissivity="1" refraction_index="2" diffuse_roughness="0">
+	<material id="glass" reflectance="1" specular_reflectance="1" transmissivity="1" refraction_index="1.6" diffuse_roughness="0">
 		<color_diffuse r="1" g="1" b="1" />
 		<color_specular r="1" g="1" b="1" />
 	</material> 
-	<material id="diffuse_red" reflectance="1" specular_reflectance="0" transmissivity="0" refraction_index="1" diffuse_roughness="0">
+	<material id="diffuse_red" reflectance="0.8" specular_reflectance="0" transmissivity="0" refraction_index="1" diffuse_roughness="0">
 		<color_diffuse r="1" g="0.2" b="0.2" />
 		<color_specular r="1" g="1" b="1" />
 	</material> 
-	<material id="diffuse_green" reflectance="1" specular_reflectance="0" transmissivity="0" refraction_index="1" diffuse_roughness="0">
+	<material id="diffuse_green" reflectance="0.8" specular_reflectance="0" transmissivity="0" refraction_index="1" diffuse_roughness="0">
 		<color_diffuse r="0.2" g="1" b="0.2" />
 		<color_specular r="1" g="1" b="1" />
 	</material> 
-	<material id="diffuse_blue" reflectance="1" specular_reflectance="0" transmissivity="0" refraction_index="1" diffuse_roughness="0">
+	<material id="diffuse_blue" reflectance="0.8" specular_reflectance="0" transmissivity="0" refraction_index="1" diffuse_roughness="0">
 		<color_diffuse r="0.6" g="0.6" b="1" />
 		<color_specular r="1" g="1" b="1" />
 	</material> 
-	<material id="diffuse_cyan" reflectance="1" specular_reflectance="0" transmissivity="0" refraction_index="1" diffuse_roughness="0">
+	<material id="diffuse_cyan" reflectance="0.8" specular_reflectance="0" transmissivity="0" refraction_index="1" diffuse_roughness="0">
 		<color_diffuse r="0.5" g="0.8" b="0.8" />
 		<color_specular r="1" g="1" b="1" />
 	</material> 
-	<material id="diffuse_white" reflectance="1" specular_reflectance="0" transmissivity="0" refraction_index="1" diffuse_roughness="0">
+	<material id="diffuse_white" reflectance="0.8" specular_reflectance="0" transmissivity="0" refraction_index="1" diffuse_roughness="0">
 		<color_diffuse r="1" g="1" b="1" />
 		<color_specular r="1" g="1" b="1" />
 	</material> 
-	<material id="diffuse_gray" reflectance="1" specular_reflectance="0" transmissivity="0" refraction_index="1" diffuse_roughness="0">
+	<material id="diffuse_gray" reflectance="0.8" specular_reflectance="0" transmissivity="0" refraction_index="1" diffuse_roughness="0">
 		<color_diffuse r="0.5" g="0.5" b="0.5" />
 		<color_specular r="1" g="1" b="1" />
 	</material> 
@@ -65,7 +65,7 @@
 	</object3D>
 
 	<!-- Light source -->
-	<light_source type="lamp_plane" emittance="60">
+	<light_source type="lamp_plane" radiosity="40">
 		<P0 x="-0.3" y="0.9999" z="0.7" />
 		<P1 x="0.3"  y="0.9999" z="0.7" />
 		<P2 x="-0.3" y="0.9999" z="1.3" />

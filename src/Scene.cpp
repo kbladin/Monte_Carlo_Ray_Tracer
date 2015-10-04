@@ -166,7 +166,7 @@ SpectralDistribution Scene::traceLocalDiffuseRay(
 					-r.direction,
 					shadow_ray.direction,
 					id.normal,
-					id.material.color_diffuse * id.material.reflectance,
+					id.material.color_diffuse * id.material.reflectance * (1 -id.material.specular_reflectance),
 					id.material.diffuse_roughness);
 			}
 			else
@@ -174,7 +174,7 @@ SpectralDistribution Scene::traceLocalDiffuseRay(
 					-r.direction,
 					shadow_ray.direction,
 					id.normal,
-					id.material.color_diffuse * id.material.reflectance);
+					id.material.color_diffuse * id.material.reflectance * (1 - id.material.specular_reflectance));
 
 			if(intersectLamp(&shadow_ray_id, shadow_ray))
 			{
@@ -236,7 +236,7 @@ SpectralDistribution Scene::traceIndirectDiffuseRay(
 				-r.direction,
 				random_direction,
 				id.normal,
-				id.material.color_diffuse * id.material.reflectance,
+				id.material.color_diffuse * id.material.reflectance * (1 - id.material.specular_reflectance),
 				id.material.diffuse_roughness);
 		}
 		else
@@ -245,7 +245,7 @@ SpectralDistribution Scene::traceIndirectDiffuseRay(
 				-r.direction,
 				random_direction,
 				id.normal,
-				id.material.color_diffuse * id.material.reflectance);
+				id.material.color_diffuse * id.material.reflectance * (1 - id.material.specular_reflectance));
 		}
 
 		r.direction = random_direction;
@@ -331,7 +331,7 @@ SpectralDistribution Scene::traceRefractedRay(
 
 		// Recursively trace the refracted rays
 		SpectralDistribution reflected_part = traceRay(recursive_ray_reflected, render_mode, iteration + 1) * recursive_ray_reflected.radiance;// * id.material.color_specular * R;
-		SpectralDistribution refracted_part= traceRay(recursive_ray_refracted, render_mode, iteration + 1) * recursive_ray_refracted.radiance;// (1 - R) * id.material.color_diffuse;
+		SpectralDistribution refracted_part = traceRay(recursive_ray_refracted, render_mode, iteration + 1) * recursive_ray_refracted.radiance;// (1 - R) * id.material.color_diffuse;
 		return reflected_part + refracted_part;
 	}
 	else
@@ -354,15 +354,13 @@ SpectralDistribution Scene::traceRay(Ray r, int render_mode, int iteration)
 	IntersectionData id;
 	LightSourceIntersectionData lamp_id;
 
-	if (intersectLamp(&lamp_id, r)) // Ray hitted light source
-		
-
+	if (intersectLamp(&lamp_id, r)) // Ray hit light source
 		switch (render_mode)
 		{
 			case WHITTED_SPECULAR :
 				return lamp_id.radiosity / (M_PI * 2);
 			default :
-				return SpectralDistribution(); //lamp_id.radiosity / (M_PI * 2);
+				return SpectralDistribution();
 		}
 	else if (intersect(&id, r))
 	{ // Ray hit another object
@@ -390,7 +388,7 @@ SpectralDistribution Scene::traceRay(Ray r, int render_mode, int iteration)
 						recursive_ray,
 						render_mode,
 						id,
-						iteration) * specularity :
+						iteration) :
 					SpectralDistribution();
 			SpectralDistribution diffuse_part;
 			switch (render_mode)
@@ -434,7 +432,7 @@ SpectralDistribution Scene::traceRay(Ray r, int render_mode, int iteration)
 								-r.direction,
 								closest_photons[i].p.direction_in,
 								id.normal,
-								id.material.color_diffuse * id.material.reflectance,
+								id.material.color_diffuse * id.material.reflectance * (1 - id.material.specular_reflectance),
 								id.material.diffuse_roughness);
 						}
 						else
@@ -443,7 +441,7 @@ SpectralDistribution Scene::traceRay(Ray r, int render_mode, int iteration)
 								-r.direction,
 								closest_photons[i].p.direction_in,
 								id.normal,
-								id.material.color_diffuse * id.material.reflectance);
+								id.material.color_diffuse * id.material.reflectance * (1 - id.material.specular_reflectance));
 						}
 
 						float distance = glm::length(closest_photons[i].p.position - ref_node.p.position);
@@ -480,7 +478,7 @@ SpectralDistribution Scene::traceRay(Ray r, int render_mode, int iteration)
 								recursive_ray,
 								render_mode,
 								id,
-								iteration) * (1 - specularity) :
+								iteration) :
 							SpectralDistribution();
 					break;
 				}
@@ -493,8 +491,7 @@ SpectralDistribution Scene::traceRay(Ray r, int render_mode, int iteration)
 
 			total +=
 				(specular_part + diffuse_part) *
-				(1 - transmissivity) *
-				reflectance;
+				(1 - transmissivity);
 		}
 		if (transmissivity)
 		{ // Completely or partly transmissive
