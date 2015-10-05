@@ -73,7 +73,7 @@
 	</light_source>
 
 	<!-- Objects in scene -->
-
+<!--
 	<object3D type="mesh" material_id="glass" file_path="../data/meshes/flat.obj">
 		<transform type="scale">
 			<v x="0.7" y="0.7" z="0.7"/>
@@ -93,5 +93,5 @@
 			<v x="1" y="0" z="0.5"/>
 		</transform>
 	</object3D>
-
+-->
 </scene>

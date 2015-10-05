@@ -40,10 +40,10 @@ int main(int argc, char const *argv[])
 
 	static const int WIDTH = 1024 / 8;
 	static const int HEIGHT = 768 / 8;
-	static const int SUB_SAMPLING_CAUSTICS = 1;
-	static const int SUB_SAMPLING_MONTE_CARLO = 10;
-	static const int SUB_SAMPLING_WHITTED_SPECULAR = 1;
-	static const int NUMBER_OF_PHOTONS_EMISSION = 500000;
+	static const int SUB_SAMPLING_CAUSTICS = 10;
+	static const int SUB_SAMPLING_MONTE_CARLO = 100;
+	static const int SUB_SAMPLING_WHITTED_SPECULAR = 10;
+	static const int NUMBER_OF_PHOTONS_EMISSION = 10000;
 
 	// The camera is used to cast appropriate initial rays
 	Camera c(

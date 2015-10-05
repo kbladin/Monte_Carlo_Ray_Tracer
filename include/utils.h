@@ -10,7 +10,7 @@ public:
 	SpectralDistribution();
 	~SpectralDistribution(){};
 
-	float power() const;
+	float norm() const;
 
 	// Various operators for SpectralDistribution
 	friend std::ostream& operator<<(

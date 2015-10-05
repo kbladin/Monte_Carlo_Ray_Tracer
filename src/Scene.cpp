@@ -186,7 +186,7 @@ SpectralDistribution Scene::traceLocalDiffuseRay(
 					shadow_ray_id.radiosity *
 					cos_theta *
 					light_solid_angle
-					; // Importance
+					;
 			}
 		}
 	}
@@ -250,7 +250,7 @@ SpectralDistribution Scene::traceIndirectDiffuseRay(
 
 		r.direction = random_direction;
 		//SpectralDistribution importance = brdf * cos_angle / g;
-		r.radiance *= M_PI * brdf; // Importance
+		r.radiance *= M_PI * brdf; // Importance, M_PI is because of the importance sampling
 		L_indirect += traceRay(r, render_mode, iteration + 1) * M_PI * brdf;
 	}
 	return L_indirect / n_samples;
@@ -264,14 +264,14 @@ SpectralDistribution Scene::traceSpecularRay(
 {
 	r.has_intersected = true;
 	SpectralDistribution specular = SpectralDistribution();
-	if (!(iteration >= 5)) // Do not end here
-	{		
+	//if (!(iteration >= 5)) // Do not end here
+	//{		
 		r.direction = glm::reflect(r.direction, id.normal);
 		SpectralDistribution brdf = evaluatePerfectBRDF(id.material.color_specular * id.material.reflectance * id.material.specular_reflectance);
 		r.radiance *= brdf;
 		// Recursively trace the reflected ray
 		specular += traceRay(r, render_mode, iteration + 1) * brdf;
-	}
+	//}
 	return specular;
 }
 
@@ -326,8 +326,8 @@ SpectralDistribution Scene::traceRefractedRay(
 		SpectralDistribution brdf_refractive = evaluatePerfectBRDF(id.material.color_specular * id.material.reflectance * id.material.specular_reflectance * (1 - R));
 
 
-		recursive_ray_reflected.radiance *= brdf_specular;// id.material.color_specular * R;
-		recursive_ray_refracted.radiance *= brdf_refractive;// (1 - R) * id.material.color_diffuse;
+		recursive_ray_reflected.radiance *= brdf_specular;
+		recursive_ray_refracted.radiance *= brdf_refractive;
 
 		// Recursively trace the refracted rays
 		SpectralDistribution reflected_part = traceRay(recursive_ray_reflected, render_mode, iteration + 1) * brdf_specular;
@@ -366,8 +366,8 @@ SpectralDistribution Scene::traceRay(Ray r, int render_mode, int iteration)
 	{ // Ray hit another object
 		// Russian roulette
 		float random = (*dis_)(*gen_);
-		float termination_probability = 0.8;
-		if (random > termination_probability || iteration > 20)
+		float non_termination_probability = 0.8;
+		if (random > non_termination_probability || iteration > 20)
 			return SpectralDistribution();
 
 		// To make sure it does not intersect with itself again
@@ -411,7 +411,7 @@ SpectralDistribution Scene::traceRay(Ray r, int render_mode, int iteration)
 						float projected_area = photon_area;// * glm::dot(p.direction_in, id.normal);
 						float solid_angle = (M_PI * 2);
 			
-						p.delta_flux = recursive_ray.radiance / termination_probability * projected_area * solid_angle;
+						p.delta_flux = recursive_ray.radiance / non_termination_probability * projected_area * solid_angle;
 
 						KDTreeNode to_insert;
 						to_insert.p = p;
@@ -504,7 +504,7 @@ SpectralDistribution Scene::traceRay(Ray r, int render_mode, int iteration)
 				traceRefractedRay(r, render_mode, id, iteration, offset, inside);
 			total += transmitted_part * transmissivity;
 		}
-		return total / termination_probability;
+		return total / non_termination_probability;
 	}
 	return SpectralDistribution();
 }

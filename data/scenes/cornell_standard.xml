@@ -65,7 +65,7 @@
 	</object3D>
 
 	<!-- Light source -->
-	<light_source type="lamp_plane" radiosity="40">
+	<light_source type="lamp_plane" radiosity="30">
 		<P0 x="-0.3" y="0.9999" z="0.7" />
 		<P1 x="0.3"  y="0.9999" z="0.7" />
 		<P2 x="-0.3" y="0.9999" z="1.3" />
