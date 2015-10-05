@@ -82,7 +82,7 @@ public:
 		glm::vec3 p0,
 		glm::vec3 p1,
 		glm::vec3 p2,
-		float radiosity, // Gets multiplied with color for total radiosity [Watts/m^2]
+		float flux, // Gets multiplied with color for total flux [Watts]
 		SpectralDistribution color);
 	~LightSource(){};
 	

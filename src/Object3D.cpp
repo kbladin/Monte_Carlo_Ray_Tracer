@@ -229,10 +229,10 @@ LightSource::LightSource(
 	glm::vec3 p0,
 	glm::vec3 p1,
 	glm::vec3 p2,
-	float radiosity,
+	float flux,
 	SpectralDistribution color) :
 	emitter_(p0, p1, p2, NULL),
-	radiosity(radiosity * color)
+	radiosity(flux / emitter_.getArea() * color)
 {}
 
 bool LightSource::intersect(LightSourceIntersectionData* light_id, Ray r)

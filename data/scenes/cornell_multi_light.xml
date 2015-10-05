@@ -2,7 +2,7 @@
 	<!-- Define all materials used in the scene -->
 	<material id="mirror" reflectance="1" specular_reflectance="1" transmissivity="0" refraction_index="1" diffuse_roughness="0">
 		<color_diffuse  r="0.2" g="0.2" b="0.8" />
-		<color_specular r="1" g="0.95" b="0.9" />
+		<color_specular r="1" g="0.9" b="0.8" />
 	</material>
 	<material id="glass" reflectance="1" specular_reflectance="1" transmissivity="1" refraction_index="1.6" diffuse_roughness="0">
 		<color_diffuse r="1" g="1" b="1" />
@@ -65,23 +65,49 @@
 	</object3D>
 
 	<!-- Light source -->
-	<light_source type="lamp_plane" flux="30">
-		<P0 x="-0.3" y="0.9999" z="0.7" />
-		<P1 x="0.3"  y="0.9999" z="0.7" />
-		<P2 x="-0.3" y="0.9999" z="1.3" />
+	<light_source type="lamp_plane" flux="6">
+		<P0 x="-1.2" y="0.9999" z="0.1" />
+		<P1 x="-0.6"  y="0.9999" z="0.1" />
+		<P2 x="-1.2" y="0.9999" z="0.7" />
+		<color r="1" g="1" b="1" />
+	</light_source>
+
+	<!-- Light source -->
+	<light_source type="lamp_plane" flux="6">
+		<P0 x="0.6" y="0.9999" z="0.7" />
+		<P1 x="1.2"  y="0.9999" z="0.7" />
+		<P2 x="0.6" y="0.9999" z="1.3" />
 		<color r="1" g="1" b="1" />
 	</light_source>
 
 	<!-- Objects in scene -->
-	<object3D type="mesh" material_id="diffuse_cyan" file_path="../data/meshes/dragon.obj">
+	<!--
+
+	<object3D type="sphere" material_id="glass" radius="0.5">
+		<position x="0" y="0" z="0.1" />
+	</object3D>
+
+
+	<object3D type="sphere" material_id="mirror" radius="0.3">
+		<position x="0.9" y="-0.7" z="0.9" />
+	</object3D>
+	<object3D type="sphere" material_id="glass" radius="0.35">
+		<position x="-0.9" y="-0.65" z="0.7" />
+	</object3D>
+	<object3D type="sphere" material_id="diffuse_blue" radius="0.2">
+		<position x="0.7" y="0.4" z="0.1" />
+	</object3D>
+	<object3D type="mesh" material_id="diffuse_cyan" file_path="../data/meshes/cube.obj">
 		<transform type="scale">
-			<v x="1.2" y="1.2" z="1.2"/>
+			<v x="0.3" y="0.3" z="0.3"/>
 		</transform>
-		<transform type="rotate" angle="-2.7">
-			<v x="0" y="1" z="0"/>
+		<transform type="orientation">
+			<normal x="0.7" y="-0.3" z="-0.3"/>
+			<up x="0" y="1" z="0"/>
 		</transform>
 		<transform type="translate">
-			<v x="0" y="-1" z="0.5"/>
+			<v x="0" y="-0.4" z="0.1"/>
 		</transform>
 	</object3D>
+	-->
 </scene>

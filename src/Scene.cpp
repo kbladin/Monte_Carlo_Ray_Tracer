@@ -249,7 +249,6 @@ SpectralDistribution Scene::traceIndirectDiffuseRay(
 		}
 
 		r.direction = random_direction;
-		//SpectralDistribution importance = brdf * cos_angle / g;
 		r.radiance *= M_PI * brdf; // Importance, M_PI is because of the importance sampling
 		L_indirect += traceRay(r, render_mode, iteration + 1) * M_PI * brdf;
 	}
@@ -264,14 +263,12 @@ SpectralDistribution Scene::traceSpecularRay(
 {
 	r.has_intersected = true;
 	SpectralDistribution specular = SpectralDistribution();
-	//if (!(iteration >= 5)) // Do not end here
-	//{		
-		r.direction = glm::reflect(r.direction, id.normal);
-		SpectralDistribution brdf = evaluatePerfectBRDF(id.material.color_specular * id.material.reflectance * id.material.specular_reflectance);
-		r.radiance *= brdf;
-		// Recursively trace the reflected ray
-		specular += traceRay(r, render_mode, iteration + 1) * brdf;
-	//}
+
+	r.direction = glm::reflect(r.direction, id.normal);
+	SpectralDistribution brdf = evaluatePerfectBRDF(id.material.color_specular * id.material.reflectance * id.material.specular_reflectance);
+	r.radiance *= brdf;
+	// Recursively trace the reflected ray
+	specular += traceRay(r, render_mode, iteration + 1) * brdf;
 	return specular;
 }
 
@@ -283,9 +280,6 @@ SpectralDistribution Scene::traceRefractedRay(
 	glm::vec3 offset,
 	bool inside)
 {
-	//if (iteration >= 5)
-	//	return SpectralDistribution();
-	
 	Ray recursive_ray = r;
 	recursive_ray.has_intersected = true;
 
@@ -511,54 +505,56 @@ SpectralDistribution Scene::traceRay(Ray r, int render_mode, int iteration)
 
 void Scene::buildPhotonMap(const int n_photons)
 {
-/*
-	float total_flux = 0;
-	for (int i = 0; i < lamps_.size(); ++i)
+	if (lamps_.size())
 	{
-		total_flux +=
-			lamps_[i]->radiosity.power() *
-			lamps_[i]->getArea();
-	}
-	float random = (*dis_)(*gen_);
-
-	int picked_light_source = 0;
-	float accumulating_chance = 0;
-	for (int i = 0; i < lamps_.size(); ++i)
-	{
-		float interval =
-			lamps_[i]->radiosity.power() *
-			lamps_[i]->getArea() / total_flux;
-		if (random > accumulating_chance && random < accumulating_chance + interval)
-		{ // This lamp got picked
-			picked_light_source = i;
-			break;
-		}
-		else
-			accumulating_chance += interval; 
-	}
-*/
-	int picked_light_source = 0;
-	for (int k = 0; k < 100; ++k)
-	{
-		#pragma omp parallel for
-		for (int i = 0; i < n_photons / 100; ++i)
+		SpectralDistribution total_flux = SpectralDistribution();
+		float total_flux_norm = 0;
+		for (int i = 0; i < lamps_.size(); ++i)
 		{
-			Ray r = lamps_[picked_light_source]->shootLightRay();
-			r.has_intersected = false;
-			// Compute delta_flux based on the flux of the light source
-			SpectralDistribution delta_flux =
-				lamps_[picked_light_source]->radiosity *
-				lamps_[picked_light_source]->getArea() /
-				n_photons;
-			float photon_area = Photon::RADIUS * Photon::RADIUS * M_PI;
-			float projected_area = photon_area;// * glm::dot(r.direction, lamps_[picked_light_source]->getNormal());
-			float solid_angle = (M_PI * 2);
-			r.radiance = delta_flux / (projected_area * solid_angle);
-			traceRay(r, PHOTON_MAPPING);
+			total_flux_norm += lamps_[i]->radiosity.norm() * lamps_[i]->getArea();
+			total_flux += lamps_[i]->radiosity * lamps_[i]->getArea();
 		}
-		std::cout << k << "\% of photon map finished." << std::endl;
+		for (int k = 0; k < 100; ++k)
+		{
+			#pragma omp parallel for
+			for (int i = 0; i < n_photons / 100; ++i)
+			{
+				// Pick a light source. Bigger flux => Bigger chance to be picked.
+				int picked_light_source = 0;
+				float accumulating_chance = 0;
+				float random = (*dis_)(*gen_);
+				for (int i = 0; i < lamps_.size(); ++i)
+				{
+					float interval =
+						lamps_[i]->radiosity.norm() *
+						lamps_[i]->getArea() /
+						total_flux_norm;
+					if (random > accumulating_chance && random < accumulating_chance + interval)
+					{ // This lamp got picked
+						picked_light_source = i;
+						break;
+					}
+					else
+						accumulating_chance += interval; 
+				}
+
+				Ray r = lamps_[picked_light_source]->shootLightRay();
+				r.has_intersected = false;
+				// Compute delta_flux based on the flux of the light source
+				SpectralDistribution delta_flux = total_flux / n_photons;
+				float photon_area = Photon::RADIUS * Photon::RADIUS * M_PI;
+				float solid_angle = (M_PI * 2);
+				r.radiance = delta_flux / (photon_area * solid_angle);
+				traceRay(r, PHOTON_MAPPING);
+			}
+			std::cout << k << "\% of photon map finished." << std::endl;
+		}
+		std::cout << "Number of photons in scene: " << photon_map_.size() << std::endl;
+		std::cout << "Optimizing kd tree" << std::endl;
+		photon_map_.optimize();
 	}
-	std::cout << "Number of photons in scene: " << photon_map_.size() << std::endl;
-	std::cout << "Optimizing kd tree" << std::endl;
-	photon_map_.optimize();
+	else
+	{
+		std::cout << "No lightsource in the scene. Could not build photon map." << std::endl;
+	}
 }

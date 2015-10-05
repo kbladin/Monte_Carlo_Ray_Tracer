@@ -132,7 +132,7 @@ bool scene_traverser::for_each(pugi::xml_node& node)
     }
     else if(std::strncmp(node.name(),"light_source",12) == 0)
     {
-        float radiosity = std::stof(node.attribute("radiosity").value());
+        float flux = std::stof(node.attribute("flux").value());
         std::string type = node.attribute("type").value();
         LightSource* lamp;
 
@@ -155,7 +155,7 @@ bool scene_traverser::for_each(pugi::xml_node& node)
             color[1] = std::stof(node.child("color").attribute("g").value());
             color[2] = std::stof(node.child("color").attribute("b").value());
 
-            lamp = new LightSource(P0, P1, P2, radiosity, color);
+            lamp = new LightSource(P0, P1, P2, flux, color);
         }
         scene->lamps_.push_back(lamp);
     }

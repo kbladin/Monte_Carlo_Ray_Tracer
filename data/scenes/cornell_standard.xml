@@ -65,13 +65,14 @@
 	</object3D>
 
 	<!-- Light source -->
-	<light_source type="lamp_plane" radiosity="30">
+	<!--
+	<light_source type="lamp_plane" flux="30">
 		<P0 x="-0.3" y="0.9999" z="0.7" />
 		<P1 x="0.3"  y="0.9999" z="0.7" />
 		<P2 x="-0.3" y="0.9999" z="1.3" />
 		<color r="1" g="1" b="1" />
 	</light_source>
-
+-->
 	<!-- Objects in scene -->
 	<object3D type="sphere" material_id="mirror" radius="0.3">
 		<position x="0.9" y="-0.7" z="0.9" />
