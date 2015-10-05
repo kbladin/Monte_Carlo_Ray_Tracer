@@ -186,7 +186,7 @@ SpectralDistribution Scene::traceLocalDiffuseRay(
 					shadow_ray_id.radiosity *
 					cos_theta *
 					light_solid_angle
-					 * r.radiance; // Importance
+					; // Importance
 			}
 		}
 	}
@@ -251,7 +251,7 @@ SpectralDistribution Scene::traceIndirectDiffuseRay(
 		r.direction = random_direction;
 		//SpectralDistribution importance = brdf * cos_angle / g;
 		r.radiance *= M_PI * brdf; // Importance
-		L_indirect += traceRay(r, render_mode, iteration + 1) * r.radiance;
+		L_indirect += traceRay(r, render_mode, iteration + 1) * M_PI * brdf;
 	}
 	return L_indirect / n_samples;
 }
@@ -270,7 +270,7 @@ SpectralDistribution Scene::traceSpecularRay(
 		SpectralDistribution brdf = evaluatePerfectBRDF(id.material.color_specular * id.material.reflectance * id.material.specular_reflectance);
 		r.radiance *= brdf;
 		// Recursively trace the reflected ray
-		specular += traceRay(r, render_mode, iteration + 1) * r.radiance;
+		specular += traceRay(r, render_mode, iteration + 1) * brdf;
 	}
 	return specular;
 }
@@ -330,8 +330,8 @@ SpectralDistribution Scene::traceRefractedRay(
 		recursive_ray_refracted.radiance *= brdf_refractive;// (1 - R) * id.material.color_diffuse;
 
 		// Recursively trace the refracted rays
-		SpectralDistribution reflected_part = traceRay(recursive_ray_reflected, render_mode, iteration + 1) * recursive_ray_reflected.radiance;// * id.material.color_specular * R;
-		SpectralDistribution refracted_part = traceRay(recursive_ray_refracted, render_mode, iteration + 1) * recursive_ray_refracted.radiance;// (1 - R) * id.material.color_diffuse;
+		SpectralDistribution reflected_part = traceRay(recursive_ray_reflected, render_mode, iteration + 1) * brdf_specular;
+		SpectralDistribution refracted_part = traceRay(recursive_ray_refracted, render_mode, iteration + 1) * brdf_refractive;
 		return reflected_part + refracted_part;
 	}
 	else
@@ -340,10 +340,12 @@ SpectralDistribution Scene::traceRefractedRay(
 			recursive_ray.origin = r.origin + id.t * r.direction - offset;
 		else
 			recursive_ray.origin = r.origin + id.t * r.direction + offset;
+
+		SpectralDistribution brdf_specular = evaluatePerfectBRDF(id.material.color_specular * id.material.reflectance * id.material.specular_reflectance);
 		recursive_ray.direction = perfect_reflection;
-		recursive_ray.radiance *= id.material.color_specular;
+		recursive_ray.radiance *= brdf_specular;
 		// Recursively trace the reflected ray
-		return traceRay(recursive_ray, render_mode, iteration + 1) * id.material.color_specular;
+		return traceRay(recursive_ray, render_mode, iteration + 1) * brdf_specular;
 	}
 }
 
