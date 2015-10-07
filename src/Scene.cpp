@@ -402,7 +402,7 @@ SpectralDistribution Scene::traceRay(Ray r, int render_mode, int iteration)
 						p.direction_in = -r.direction;
 
 						float photon_area = Photon::RADIUS * Photon::RADIUS * M_PI;
-						float projected_area = photon_area;// * glm::dot(p.direction_in, id.normal);
+						float projected_area = photon_area * glm::dot(p.direction_in, id.normal);
 						float solid_angle = (M_PI * 2);
 			
 						p.delta_flux = recursive_ray.radiance / non_termination_probability * projected_area * solid_angle;
@@ -447,18 +447,18 @@ SpectralDistribution Scene::traceRay(Ray r, int render_mode, int iteration)
 						float distance = glm::length(closest_photons[i].p.position - ref_node.p.position);
 						// The area of the photon if its inclination angle
 						// is 90 degrees and the surface is flat.
-						float photon_area = Photon::RADIUS * Photon::RADIUS * M_PI; 
-						// the area should be devided by this to get the actual area.
-						// Instead we just multiply with this factor in the numerator
-						// to avoid numerical problems if the angle is big.
 						float cos_theta = glm::dot(closest_photons[i].p.direction_in, id.normal);
+						float photon_area = Photon::RADIUS * Photon::RADIUS * M_PI;
+						float projected_area = photon_area * cos_theta;
 						photon_radiance +=
+							// flux / area / steradian = radiance
 							closest_photons[i].p.delta_flux *
 							(glm::length(distance) < Photon::RADIUS ? 1 : 0)
-							/ photon_area // Delta area
-							* brdf
-							* r.radiance // Importance
-							* 0.5; // Dont know why 0.5 here but it works...
+							/ (projected_area * 2 * M_PI)
+							//
+							* brdf // The brdf is part of the integral of the rendering equation
+							* (2 * M_PI) // Integration over the whole hemisphere get us back to radiance
+							* 0.5; // Don't know why I need this
 					}
 
 					diffuse_part = photon_radiance;

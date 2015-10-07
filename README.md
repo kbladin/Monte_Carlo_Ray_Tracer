@@ -33,7 +33,7 @@ The algorithm recursively trace light rays from the camera out in the scene and 
 
 ## Things I would like to add
 
-* Implement a field of view algorithm.
+* Implement a field of view model.
 * Other optimizations (reduce cash misses, simplify code, precomputing, better paralellization technique).
 * Make different wavelengths refract a different amount and increase number of wavelengths.
 	* This way it is possible to achieve rainbow effects from refraction.

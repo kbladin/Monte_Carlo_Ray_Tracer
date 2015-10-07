@@ -38,12 +38,12 @@ int main(int argc, char const *argv[])
 	time_t time_start, time_now, rendertime_start;
 	time(&time_start);
 
-	static const int WIDTH = 1024 / 8;
-	static const int HEIGHT = 768 / 8;
-	static const int SUB_SAMPLING_CAUSTICS = 10;
-	static const int SUB_SAMPLING_MONTE_CARLO = 20;
-	static const int SUB_SAMPLING_WHITTED_SPECULAR = 10;
-	static const int NUMBER_OF_PHOTONS_EMISSION = 100000;
+	static const int WIDTH = 1024 / 1;
+	static const int HEIGHT = 768 / 1;
+	static const int SUB_SAMPLING_CAUSTICS = 100;
+	static const int SUB_SAMPLING_MONTE_CARLO = 400;
+	static const int SUB_SAMPLING_WHITTED_SPECULAR = 100;
+	static const int NUMBER_OF_PHOTONS_EMISSION = 2000000;
 
 	// The camera is used to cast appropriate initial rays
 	Camera c(
