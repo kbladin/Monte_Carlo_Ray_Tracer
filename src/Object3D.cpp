@@ -33,6 +33,11 @@ Mesh::Mesh(glm::mat4 transform, const char* file_path, Material * material) :
 
 	if(!loadOBJ(file_path, tmp_positions, tmp_uvs, tmp_normals))
 		exit (EXIT_FAILURE);
+	for (int i = 0; i < tmp_positions.size(); ++i)
+	{
+		tmp_positions[i] = glm::vec3(transform_ * glm::vec4(tmp_positions[i], 1));
+		tmp_normals[i] = glm::vec3(transform_ * glm::vec4(tmp_normals[i], 0));
+	}
 	indexVBO(
 		tmp_positions,
 		tmp_uvs,
@@ -42,6 +47,7 @@ Mesh::Mesh(glm::mat4 transform, const char* file_path, Material * material) :
 		positions_,
 		uvs_,
 		normals_);
+
 
 	std::cout << "Building octree for mesh." << std::endl;
 	ot_aabb_ = new OctTreeAABB(this);

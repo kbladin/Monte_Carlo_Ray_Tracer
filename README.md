@@ -5,6 +5,8 @@ This project is a program for rendering virtual 3D scenes with the global illumi
 The algorithm recursively trace light rays from the camera out in the scene and bounces them around on / through the surface of objects.
 
 ![](data/rendered_images/rendered_image.png "Rendered image")
+![](data/rendered_images/dragon.png "Dragon")
+![](data/rendered_images/bunny.png "Bunny")
 
 ## Features
 

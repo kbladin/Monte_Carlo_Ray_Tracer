@@ -360,7 +360,7 @@ SpectralDistribution Scene::traceRay(Ray r, int render_mode, int iteration)
 	{ // Ray hit another object
 		// Russian roulette
 		float random = (*dis_)(*gen_);
-		float non_termination_probability = 0.8;
+		float non_termination_probability = glm::max((1 - float(iteration) / 10), 0.5f);
 		if (random > non_termination_probability || iteration > 20)
 			return SpectralDistribution();
 

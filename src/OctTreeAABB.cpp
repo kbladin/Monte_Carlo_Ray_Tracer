@@ -9,24 +9,20 @@
 
 bool AABB::intersect(Ray r) const
 {
-	glm::vec3 origin =
-		glm::vec3(glm::inverse(transform) *
-		glm::vec4(r.origin, 1));
-	glm::vec3 direction =
-		glm::vec3(glm::inverse(transform) *
-		glm::vec4(r.direction, 0));
+	glm::vec3 origin = r.origin;
+	glm::vec3 direction = r.direction;
 
 	// r.dir is unit direction vector of ray
 	glm::vec3 dirfrac(1.0f / direction.x, 1.0f / direction.y, 1.0f / direction.z);
 	// lb is the corner of AABB with minimal coordinates - left bottom, 
 	// rt is maximal corner
 	// r.org is the origin of ray
-	float t1 = (min.x - origin.x)*dirfrac.x;
-	float t2 = (max.x - origin.x)*dirfrac.x;
-	float t3 = (min.y - origin.y)*dirfrac.y;
-	float t4 = (max.y - origin.y)*dirfrac.y;
-	float t5 = (min.z - origin.z)*dirfrac.z;
-	float t6 = (max.z - origin.z)*dirfrac.z;
+	float t1 = (min_.x - origin.x)*dirfrac.x;
+	float t2 = (max_.x - origin.x)*dirfrac.x;
+	float t3 = (min_.y - origin.y)*dirfrac.y;
+	float t4 = (max_.y - origin.y)*dirfrac.y;
+	float t5 = (min_.z - origin.z)*dirfrac.z;
+	float t6 = (max_.z - origin.z)*dirfrac.z;
 
 	float tmin = glm::max(
 		glm::max(glm::min(t1, t2), glm::min(t3, t4)),
@@ -56,8 +52,8 @@ bool AABB::intersect(Ray r) const
 
 bool AABB::intersectTriangle(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2) const
 {
-	glm::vec3 center_point = (min + max) / 2.0f;
-	glm::vec3 scale = (max - center_point) / 1.0f;
+	glm::vec3 center_point = (min_ + max_) / 2.0f;
+	glm::vec3 scale = (max_ - center_point) / 1.0f;
 
 	// Convert to format used by triBoxOverlap()
 	float boxcenter[3] = {center_point[0], center_point[1], center_point[2]};
@@ -76,11 +72,9 @@ OctNodeAABB::OctNodeAABB(
 	glm::vec3 aabb_min,
 	glm::vec3 aabb_max)
 {
+	aabb_.min_ = aabb_min;
+	aabb_.max_ = aabb_max;
 	mesh_ = mesh;
-	aabb_.min = aabb_min;
-	aabb_.max = aabb_max;
-	aabb_.transform = mesh->getTransform();
-
 	// Find which triangles are in this AABB
 	// If it has no parent this is the root node
 	std::vector<unsigned int>& index_list =
@@ -164,9 +158,9 @@ bool OctNodeAABB::intersect(IntersectionData* id, Ray r) const
 		{
 			// Möller–Trumbore intersection algorithm for triangle
 
-			p0 = glm::vec3(aabb_.transform * glm::vec4(mesh_->positions_[triangle_indices_[i + 0]], 1));
-			p1 = glm::vec3(aabb_.transform * glm::vec4(mesh_->positions_[triangle_indices_[i + 1]], 1));
-			p2 = glm::vec3(aabb_.transform * glm::vec4(mesh_->positions_[triangle_indices_[i + 2]], 1));
+			p0 = mesh_->positions_[triangle_indices_[i + 0]];
+			p1 = mesh_->positions_[triangle_indices_[i + 1]];
+			p2 = mesh_->positions_[triangle_indices_[i + 2]];
 
 			// Find vectors for two edges sharing p0
 			e1 = p1 - p0;
@@ -206,9 +200,9 @@ bool OctNodeAABB::intersect(IntersectionData* id, Ray r) const
 
 			if(t > 0.00001 && t < t_smallest) { //ray intersection
 				t_smallest = t;
-				glm::vec3 n0 = glm::vec3(aabb_.transform * glm::vec4(mesh_->normals_[triangle_indices_[i + 0]], 0));
-				glm::vec3 n1 = glm::vec3(aabb_.transform * glm::vec4(mesh_->normals_[triangle_indices_[i + 1]], 0));
-				glm::vec3 n2 = glm::vec3(aabb_.transform * glm::vec4(mesh_->normals_[triangle_indices_[i + 2]], 0));
+				glm::vec3 n0 = mesh_->normals_[triangle_indices_[i + 0]];
+				glm::vec3 n1 = mesh_->normals_[triangle_indices_[i + 1]];
+				glm::vec3 n2 = mesh_->normals_[triangle_indices_[i + 2]];
 
 				// Interpolate to find normal
 				glm::vec3 n = (1 - u - v) * n0 + u * n1 + v * n2;

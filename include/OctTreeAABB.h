@@ -13,12 +13,11 @@ class Mesh;
 // axis aligned in world coordinates.
 struct AABB
 {
-	glm::vec3 min;
-	glm::vec3 max;
-	glm::mat4 transform;
-
 	bool intersect(Ray r) const;
 	bool intersectTriangle(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2) const;
+
+	glm::vec3 min_;
+	glm::vec3 max_;
 };
 
 // A node of an octree. Has eight child nodes
@@ -57,7 +56,6 @@ class OctTreeAABB : public OctNodeAABB
 {
 public:
 	OctTreeAABB(Mesh* mesh);
-
 	~OctTreeAABB();
 private:
 };
