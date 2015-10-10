@@ -41,7 +41,7 @@ int main(int argc, char const *argv[])
 	static const int WIDTH = 1024 / 1;
 	static const int HEIGHT = 768 / 1;
 	static const int SUB_SAMPLING_CAUSTICS = 10;
-	static const int SUB_SAMPLING_MONTE_CARLO = 400;
+	static const int SUB_SAMPLING_MONTE_CARLO = 800;
 	static const int SUB_SAMPLING_WHITTED_SPECULAR = 100;
 	static const int NUMBER_OF_PHOTONS_EMISSION = 2000000;
 
