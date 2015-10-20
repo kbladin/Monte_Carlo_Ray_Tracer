@@ -558,3 +558,40 @@ void Scene::buildPhotonMap(const int n_photons)
 		std::cout << "No lightsource in the scene. Could not build photon map." << std::endl;
 	}
 }
+
+int Scene::getNumberOfTriangles()
+{
+	int n_triangles = 0;
+	for (int i = 0; i < objects_.size(); ++i)
+	{
+		if(Mesh* m = dynamic_cast<Mesh*>(objects_[i])) {
+		   // old was safely casted to NewType
+		   n_triangles += m->getNumberOfTriangles();
+		}
+	}
+	return  n_triangles;
+}
+
+int Scene::getNumberOfObjects()
+{
+	return objects_.size();
+}
+
+int Scene::getNumberOfSpheres()
+{
+	int n_spheres = 0;
+	for (int i = 0; i < objects_.size(); ++i)
+	{
+		if(Sphere* s = dynamic_cast<Sphere*>(objects_[i])) {
+		   // old was safely casted to NewType
+		   n_spheres ++;
+		}
+	}
+	return  n_spheres;
+}
+
+int Scene::getNumberOfPhotons()
+{
+	return photon_map_.size();
+}
+

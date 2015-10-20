@@ -69,6 +69,11 @@ public:
 	
 	SpectralDistribution traceRay(Ray r, int render_mode, int iteration = 0);
 	void buildPhotonMap(const int n_photons);
+
+	int getNumberOfTriangles();
+	int getNumberOfObjects();
+	int getNumberOfSpheres();
+	int getNumberOfPhotons();
 };
 
 #endif // SCENE_H

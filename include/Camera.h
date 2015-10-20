@@ -13,6 +13,7 @@ public:
 	glm::vec3 center;
 	glm::vec3 up;
 	float fov;
+	glm::mat4 VP_inv;
 
 	const int WIDTH;
 	const int HEIGHT;
@@ -31,6 +32,9 @@ public:
 		const int pixel_y, // [0, HEIGHT_ - 1]
 		const float parameter_x, // [-0.5, 0.5]
 		const float parameter_y); // [-0.5, 0.5]
+
+	int getWidth();
+	int getHeight();
 };
 
 #endif // CAMERA_H

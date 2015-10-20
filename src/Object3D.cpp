@@ -90,6 +90,11 @@ glm::vec3 Mesh::getMaxPosition() const
 	return max;
 }
 
+int Mesh::getNumberOfTriangles() const
+{
+	return indices_.size() / 3;
+}
+
 // --- Sphere class functions --- //
 
 Sphere::Sphere(glm::vec3 position, float radius, Material* material) : 

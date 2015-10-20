@@ -41,6 +41,7 @@ public:
 	glm::vec3 		getMinPosition() const;
 	glm::vec3 		getMaxPosition() const;
 	glm::mat4		getTransform() const;
+	int				getNumberOfTriangles() const;
 };
 
 class Sphere : public Object3D

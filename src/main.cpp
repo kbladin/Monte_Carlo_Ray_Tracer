@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <cmath>
 #include <stdio.h>
 #include <time.h>
@@ -38,12 +39,12 @@ int main(int argc, char const *argv[])
 	time_t time_start, time_now, rendertime_start;
 	time(&time_start);
 
-	static const int WIDTH = 1024 / 1;
-	static const int HEIGHT = 768 / 1;
-	static const int SUB_SAMPLING_CAUSTICS = 10;
-	static const int SUB_SAMPLING_MONTE_CARLO = 800;
-	static const int SUB_SAMPLING_WHITTED_SPECULAR = 100;
-	static const int NUMBER_OF_PHOTONS_EMISSION = 2000000;
+	static const int WIDTH = 1024 / 4;
+	static const int HEIGHT = 768 / 4;
+	static const int SUB_SAMPLING_CAUSTICS = 1;
+	static const int SUB_SAMPLING_MONTE_CARLO = 100;
+	static const int SUB_SAMPLING_WHITTED_SPECULAR = 1;
+	static const int NUMBER_OF_PHOTONS_EMISSION = 0;
 
 	// The camera is used to cast appropriate initial rays
 	Camera c(
@@ -156,14 +157,25 @@ int main(int argc, char const *argv[])
 	// To show how much time it actually took to render.
 	time(&time_now);
 	double time_elapsed = difftime(time_now, time_start);
-	int hours = time_elapsed / (60 * 60);
-	int minutes = (int(time_elapsed) % (60 * 60)) / 60;
-	int seconds = int(time_elapsed) % 60;
+	int hours_elapsed = time_elapsed / (60 * 60);
+	int minutes_elapsed = (int(time_elapsed) % (60 * 60)) / 60;
+	int seconds_elapsed = int(time_elapsed) % 60;
 
-	std::cout << "Rendering time : "
-		<< hours << "h:"
-		<< minutes << "m:"
-		<< seconds << "s." << std::endl;
+	int hours_prerender = prerender_time / (60 * 60);
+	int minutes_prerender = (int(prerender_time) % (60 * 60)) / 60;
+	int seconds_prerender = int(prerender_time) % 60;
+
+	std::string rendering_time_string =
+	 	  std::to_string(hours_elapsed) + "h:"
+		+ std::to_string(minutes_elapsed) + "m:"
+		+ std::to_string(seconds_elapsed) + "s";
+
+	std::string prerender_time_string =
+		  std::to_string(hours_prerender) + "h:"
+		+ std::to_string(minutes_prerender) + "m:"
+		+ std::to_string(seconds_prerender) + "s";
+
+	std::cout << "Rendering time : " << rendering_time_string << std::endl;
 
 	// Convert to byte data
 	// Gamma correction
@@ -182,11 +194,31 @@ int main(int argc, char const *argv[])
 		}
 	}
 
-	std::string file_name = currentDateTime() + ".ppm";
+	std::string date_time = currentDateTime();
+	std::string file_name = date_time + ".ppm";
   
 	// Save the image data to file
 	savePPM(file_name.c_str(), WIDTH, HEIGHT, pixel_values);
-	
+
+	// Save information in a text file
+	std::ofstream myfile;
+	myfile.open (date_time + ".txt");
+	myfile << "Rendered file information:\n\n";
+	myfile << "File name                    : " + date_time + ".ppm\n";
+	myfile << "Rendering time               : " + rendering_time_string +"\n";
+	myfile << "Prerendering time            : " + prerender_time_string +"\n";
+	myfile << "Resolution                   : " + std::to_string(WIDTH) + " x " + std::to_string(HEIGHT) + "\n";
+	myfile << "Caustic sub sampling         : " + std::to_string(SUB_SAMPLING_CAUSTICS) + "\n";
+	myfile << "Monte Carlo sub sampling     : " + std::to_string(SUB_SAMPLING_MONTE_CARLO) + "\n";
+	myfile << "Direct specular sub sampling : " + std::to_string(SUB_SAMPLING_WHITTED_SPECULAR) + "\n";
+	myfile << "Emitted photons              : " + std::to_string(NUMBER_OF_PHOTONS_EMISSION) + "\n";
+	myfile << "Photons in scene             : " + std::to_string(s.getNumberOfPhotons()) + "\n";
+	myfile << "Objects in scene             : " + std::to_string(s.getNumberOfObjects()) + "\n";
+	myfile << "Spheres in scene             : " + std::to_string(s.getNumberOfSpheres()) + "\n";
+	myfile << "Triangles in scene           : " + std::to_string(s.getNumberOfTriangles()) + "\n";
+	myfile << "Gamma                        : " + std::to_string(gamma) + "\n";
+	myfile.close();
+
 	// Clean up
 	delete [] irradiance_values;
 	delete [] pixel_values;
