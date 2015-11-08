@@ -4,9 +4,14 @@ This project is a program for rendering virtual 3D scenes with the global illumi
 
 The algorithm recursively trace light rays from the camera out in the scene and bounces them around on / through the surface of objects.
 
+The project was made for the course Advanded Global Illumination and Rendering, TNCG15, at Linköpings University.
+
 ![](data/rendered_images/rendered_image.png "Rendered image")
 ![](data/rendered_images/dragon.png "Dragon")
-![](data/rendered_images/bunny.png "Bunny")
+![](data/rendered_images/triangles1.png "24 Triangles")
+![](data/rendered_images/triangles2.png "968" Triangles")
+![](data/rendered_images/triangles3.png "4968 Triangles")
+![](data/rendered_images/triangles4.png "100 000 Triangles")
 
 ## Features
 
@@ -35,7 +40,7 @@ The algorithm recursively trace light rays from the camera out in the scene and 
 
 ## Things I would like to add
 
-* Implement a field of view model.
+* Implement a field of view technique.
 * Other optimizations (reduce cash misses, simplify code, precomputing, better paralellization technique).
 * Make different wavelengths refract a different amount and increase number of wavelengths.
 	* This way it is possible to achieve rainbow effects from refraction.
