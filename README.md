@@ -38,7 +38,7 @@ The project was made for the course Advanded Global Illumination and Rendering, 
 * Simple paralellization using openMP.
 * Using the XML parser pugixml to be able to load XML files describing the scenes.
 
-## Things I would like to add
+## Future Work
 
 * Implement a field of view technique.
 * Other optimizations (reduce cash misses, simplify code, precomputing, better paralellization technique).
