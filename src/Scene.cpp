@@ -317,7 +317,7 @@ SpectralDistribution Scene::traceRefractedRay(
 		recursive_ray_refracted.direction = perfect_refraction;
 
 		SpectralDistribution brdf_specular = evaluatePerfectBRDF(id.material.color_specular * id.material.reflectance * id.material.specular_reflectance * R);
-		SpectralDistribution brdf_refractive = evaluatePerfectBRDF(id.material.color_specular * id.material.reflectance * id.material.specular_reflectance * (1 - R));
+		SpectralDistribution brdf_refractive = evaluatePerfectBRDF(id.material.color_diffuse * id.material.reflectance * id.material.specular_reflectance * (1 - R));
 
 
 		recursive_ray_reflected.radiance *= brdf_specular;
@@ -360,12 +360,15 @@ SpectralDistribution Scene::traceRay(Ray r, int render_mode, int iteration)
 	{ // Ray hit another object
 		// Russian roulette
 		float random = (*dis_)(*gen_);
-		float non_termination_probability = glm::max((1 - float(iteration) / 10), 0.5f);
+		//float non_termination_probability = glm::max((1 - float(iteration) / 10), 0.5f);
+		float non_termination_probability = iteration == 0 ? 1.0 : 0.8;
 		if (random > non_termination_probability || iteration > 20)
 			return SpectralDistribution();
+		//if (iteration >= 4)
+		//	return SpectralDistribution();
 
 		// To make sure it does not intersect with itself again
-		glm::vec3 offset = id.normal * 0.0001f;
+		glm::vec3 offset = id.normal * 0.00001f;
 		bool inside = false;
 		if (glm::dot(id.normal, r.direction) > 0) // The ray is inside an object
 			inside = true;
@@ -402,8 +405,11 @@ SpectralDistribution Scene::traceRay(Ray r, int render_mode, int iteration)
 						p.direction_in = -r.direction;
 
 						float photon_area = Photon::RADIUS * Photon::RADIUS * M_PI;
-						float projected_area = photon_area * glm::dot(p.direction_in, id.normal);
-						float solid_angle = (M_PI * 2);
+						// The projected area should be photon area times cos theta,
+						// This is avoided both here and later to avoid numerical problem
+						// when dividing with small numbers.
+						float projected_area = photon_area;// * glm::dot(p.direction_in, id.normal);
+						float solid_angle = M_PI;
 			
 						p.delta_flux = recursive_ray.radiance / non_termination_probability * projected_area * solid_angle;
 
@@ -447,9 +453,9 @@ SpectralDistribution Scene::traceRay(Ray r, int render_mode, int iteration)
 						float distance = glm::length(closest_photons[i].p.position - ref_node.p.position);
 						// The area of the photon if its inclination angle
 						// is 90 degrees and the surface is flat.
-						float cos_theta = glm::dot(closest_photons[i].p.direction_in, id.normal);
+						//float cos_theta = glm::max(glm::dot(closest_photons[i].p.direction_in, id.normal), 0.0f);
 						float photon_area = Photon::RADIUS * Photon::RADIUS * M_PI;
-						float projected_area = photon_area * cos_theta;
+						float projected_area = photon_area;// * cos_theta;
 						photon_radiance +=
 							// flux / area / steradian = radiance
 							closest_photons[i].p.delta_flux *
@@ -457,8 +463,7 @@ SpectralDistribution Scene::traceRay(Ray r, int render_mode, int iteration)
 							/ (projected_area * 2 * M_PI)
 							//
 							* brdf // The brdf is part of the integral of the rendering equation
-							* (2 * M_PI) // Integration over the whole hemisphere get us back to radiance
-							* 0.5; // Don't know why I need this
+							* (2 * M_PI); // Integration over the whole hemisphere get us back to radiance
 					}
 
 					diffuse_part = photon_radiance;

@@ -39,12 +39,12 @@ int main(int argc, char const *argv[])
 	time_t time_start, time_now, rendertime_start;
 	time(&time_start);
 
-	static const int WIDTH = 1024 / 4;
-	static const int HEIGHT = 768 / 4;
-	static const int SUB_SAMPLING_CAUSTICS = 1;
-	static const int SUB_SAMPLING_MONTE_CARLO = 100;
-	static const int SUB_SAMPLING_WHITTED_SPECULAR = 1;
-	static const int NUMBER_OF_PHOTONS_EMISSION = 0;
+	static const int WIDTH = 1024 / 1;
+	static const int HEIGHT = 768 / 1;
+	static const int SUB_SAMPLING_CAUSTICS = 10;
+	static const int SUB_SAMPLING_MONTE_CARLO = 500;
+	static const int SUB_SAMPLING_DIRECT_SPECULAR = 100;
+	static const int NUMBER_OF_PHOTONS_EMISSION = 2000000;
 
 	// The camera is used to cast appropriate initial rays
 	Camera c(
@@ -89,9 +89,9 @@ int main(int argc, char const *argv[])
 		{
 			int index = (x + y * c.WIDTH);
 			SpectralDistribution sd;
-			if (SUB_SAMPLING_WHITTED_SPECULAR)
+			if (SUB_SAMPLING_DIRECT_SPECULAR)
 			{
-				for (int i = 0; i < SUB_SAMPLING_WHITTED_SPECULAR; ++i)
+				for (int i = 0; i < SUB_SAMPLING_DIRECT_SPECULAR; ++i)
 				{
 					Ray r = c.castRay(
 						x, // Pixel x
@@ -100,7 +100,7 @@ int main(int argc, char const *argv[])
 						dis(gen)); // Parameter y (>= -0.5 and < 0.5), for subsampling
 					sd += s.traceRay(r, Scene::WHITTED_SPECULAR) * glm::dot(r.direction, camera_plane_normal);
 				}
-				irradiance_values[index] += sd / SUB_SAMPLING_WHITTED_SPECULAR * (2 * M_PI);				
+				irradiance_values[index] += sd / SUB_SAMPLING_DIRECT_SPECULAR * (2 * M_PI);				
 			}
 			sd = SpectralDistribution();
 			if (SUB_SAMPLING_CAUSTICS)
@@ -210,7 +210,7 @@ int main(int argc, char const *argv[])
 	myfile << "Resolution                   : " + std::to_string(WIDTH) + " x " + std::to_string(HEIGHT) + "\n";
 	myfile << "Caustic sub sampling         : " + std::to_string(SUB_SAMPLING_CAUSTICS) + "\n";
 	myfile << "Monte Carlo sub sampling     : " + std::to_string(SUB_SAMPLING_MONTE_CARLO) + "\n";
-	myfile << "Direct specular sub sampling : " + std::to_string(SUB_SAMPLING_WHITTED_SPECULAR) + "\n";
+	myfile << "Direct specular sub sampling : " + std::to_string(SUB_SAMPLING_DIRECT_SPECULAR) + "\n";
 	myfile << "Emitted photons              : " + std::to_string(NUMBER_OF_PHOTONS_EMISSION) + "\n";
 	myfile << "Photons in scene             : " + std::to_string(s.getNumberOfPhotons()) + "\n";
 	myfile << "Objects in scene             : " + std::to_string(s.getNumberOfObjects()) + "\n";

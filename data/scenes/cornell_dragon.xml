@@ -65,7 +65,7 @@
 	</object3D>
 
 	<!-- Light source -->
-	<light_source type="lamp_plane" flux="10">
+	<light_source type="lamp_plane" flux="8">
 		<P0 x="-0.3" y="0.9999" z="1.2" />
 		<P1 x="0.3"  y="0.9999" z="1.2" />
 		<P2 x="-0.3" y="0.9999" z="1.8" />
@@ -73,7 +73,7 @@
 	</light_source>
 
 	<!-- Objects in scene -->
-	<object3D type="mesh" material_id="diffuse_cyan" file_path="../data/meshes/dragon.obj">
+	<object3D type="mesh" material_id="diffuse_white" file_path="../data/meshes/dragon.obj">
 		<transform type="scale">
 			<v x="1.2" y="1.2" z="1.2"/>
 		</transform>

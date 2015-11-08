@@ -9,8 +9,6 @@
 class Mesh;
 
 // Axis aligned bounding box.
-// The AABB also has a transform matrix, hence it is not necessarily
-// axis aligned in world coordinates.
 struct AABB
 {
 	bool intersect(Ray r) const;
