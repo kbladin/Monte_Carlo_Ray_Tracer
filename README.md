@@ -40,7 +40,7 @@ The project was made for the course Advanded Global Illumination and Rendering, 
 
 ## Future Work
 
-* Implement a field of view technique.
+* Implement a depth of field technique.
 * Other optimizations (reduce cash misses, simplify code, precomputing, better paralellization technique).
 * Make different wavelengths refract a different amount and increase number of wavelengths.
 	* This way it is possible to achieve rainbow effects from refraction.
