@@ -9,7 +9,6 @@ The project was made for the course Advanded Global Illumination and Rendering, 
 ![](data/rendered_images/rendered_image.png "Rendered image")
 ![](data/rendered_images/dragon.png "Dragon")
 ![](data/rendered_images/triangles1.png "24 Triangles")
-![](data/rendered_images/triangles2.png "968" Triangles")
 ![](data/rendered_images/triangles3.png "4968 Triangles")
 ![](data/rendered_images/triangles4.png "100 000 Triangles")
 
